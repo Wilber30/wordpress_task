@@ -1,17 +1,47 @@
-/* Error: Undefined variable.
- *    ,
- * 22 |     color: $text-color;
- *    |            ^^^^^^^^^^^
- *    '
- *   Users/wilber/Development/wordpress/wp-content/themes/bones/library/scss/breakpoints/_base.scss 22:9  root stylesheet */
+/*
+Error: Invalid CSS after "@import ": expected file to import (string or url()), was "@import "partia..."
+        on line 14 of /Users/wilber/Development/wordpress/wp-content/themes/bones/library/scss/breakpoints/_base.scss
 
-body::before {
-  font-family: "Source Code Pro", "SF Mono", Monaco, Inconsolata, "Fira Mono",
-      "Droid Sans Mono", monospace, monospace;
+9: possible. This is called at the top of the main stylsheet
+10: and will be used across all viewports.
+11: 
+12: ******************************************************************\/
+13: 
+14: @import @import "partials/variables";
+15:  
+16: 
+17: /*********************
+18: GENERAL STYLES
+19: *********************\/
+
+Backtrace:
+/Users/wilber/Development/wordpress/wp-content/themes/bones/library/scss/breakpoints/_base.scss:14
+/Users/wilber/.rvm/rubies/ruby-2.6.3/lib/ruby/gems/2.6.0/gems/sass-3.4.25/lib/sass/scss/parser.rb:1207:in `expected'
+/Users/wilber/.rvm/rubies/ruby-2.6.3/lib/ruby/gems/2.6.0/gems/sass-3.4.25/lib/sass/scss/parser.rb:1137:in `expected'
+/Users/wilber/.rvm/rubies/ruby-2.6.3/lib/ruby/gems/2.6.0/gems/sass-3.4.25/lib/sass/scss/parser.rb:1117:in `expr!'
+/Users/wilber/.rvm/rubies/ruby-2.6.3/lib/ruby/gems/2.6.0/gems/sass-3.4.25/lib/sass/scss/parser.rb:371:in `block in import_directive'
+/Users/wilber/.rvm/rubies/ruby-2.6.3/lib/ruby/gems/2.6.0/gems/sass-3.4.25/lib/sass/scss/parser.rb:370:in `loop'
+/Users/wilber/.rvm/rubies/ruby-2.6.3/lib/ruby/gems/2.6.0/gems/sass-3.4.25/lib/sass/scss/parser.rb:370:in `import_directive'
+/Users/wilber/.rvm/rubies/ruby-2.6.3/lib/ruby/gems/2.6.0/gems/sass-3.4.25/lib/sass/scss/parser.rb:222:in `special_directive'
+/Users/wilber/.rvm/rubies/ruby-2.6.3/lib/ruby/gems/2.6.0/gems/sass-3.4.25/lib/sass/scss/parser.rb:197:in `directive'
+/Users/wilber/.rvm/rubies/ruby-2.6.3/lib/ruby/gems/2.6.0/gems/sass-3.4.25/lib/sass/scss/parser.rb:684:in `block_child'
+/Users/wilber/.rvm/rubies/ruby-2.6.3/lib/ruby/gems/2.6.0/gems/sass-3.4.25/lib/sass/scss/parser.rb:674:in `block_contents'
+/Users/wilber/.rvm/rubies/ruby-2.6.3/lib/ruby/gems/2.6.0/gems/sass-3.4.25/lib/sass/scss/parser.rb:125:in `stylesheet'
+/Users/wilber/.rvm/rubies/ruby-2.6.3/lib/ruby/gems/2.6.0/gems/sass-3.4.25/lib/sass/scss/parser.rb:41:in `parse'
+/Users/wilber/.rvm/rubies/ruby-2.6.3/lib/ruby/gems/2.6.0/gems/sass-3.4.25/lib/sass/engine.rb:409:in `_to_tree'
+/Users/wilber/.rvm/rubies/ruby-2.6.3/lib/ruby/gems/2.6.0/gems/sass-3.4.25/lib/sass/engine.rb:384:in `_render_with_sourcemap'
+/Users/wilber/.rvm/rubies/ruby-2.6.3/lib/ruby/gems/2.6.0/gems/sass-3.4.25/lib/sass/engine.rb:301:in `render_with_sourcemap'
+/Users/wilber/.rvm/rubies/ruby-2.6.3/lib/ruby/gems/2.6.0/gems/sass-3.4.25/lib/sass/exec/sass_scss.rb:391:in `run'
+/Users/wilber/.rvm/rubies/ruby-2.6.3/lib/ruby/gems/2.6.0/gems/sass-3.4.25/lib/sass/exec/sass_scss.rb:63:in `process_result'
+/Users/wilber/.rvm/rubies/ruby-2.6.3/lib/ruby/gems/2.6.0/gems/sass-3.4.25/lib/sass/exec/base.rb:52:in `parse'
+/Users/wilber/.rvm/rubies/ruby-2.6.3/lib/ruby/gems/2.6.0/gems/sass-3.4.25/lib/sass/exec/base.rb:19:in `parse!'
+/Users/wilber/.rvm/rubies/ruby-2.6.3/lib/ruby/gems/2.6.0/gems/sass-3.4.25/bin/sass:13:in `<top (required)>'
+/Users/wilber/.rvm/rubies/ruby-2.6.3/bin/sass:23:in `load'
+/Users/wilber/.rvm/rubies/ruby-2.6.3/bin/sass:23:in `<main>'
+/Users/wilber/.rvm/rubies/ruby-2.6.3/bin/ruby_executable_hooks:24:in `eval'
+/Users/wilber/.rvm/rubies/ruby-2.6.3/bin/ruby_executable_hooks:24:in `<main>'
+*/
+body:before {
   white-space: pre;
-  display: block;
-  padding: 1em;
-  margin-bottom: 1em;
-  border-bottom: 2px solid black;
-  content: "Error: Undefined variable.\a    \2577 \a 22 \2502      color: $text-color;\a    \2502             ^^^^^^^^^^^\a    \2575 \a   Users/wilber/Development/wordpress/wp-content/themes/bones/library/scss/breakpoints/_base.scss 22:9  root stylesheet";
-}
+  font-family: monospace;
+  content: "Error: Invalid CSS after \"@import \": expected file to import (string or url()), was \"@import \"partia...\"\A         on line 14 of /Users/wilber/Development/wordpress/wp-content/themes/bones/library/scss/breakpoints/_base.scss\A \A 9: possible. This is called at the top of the main stylsheet\A 10: and will be used across all viewports.\A 11: \A 12: ******************************************************************/\A 13: \A 14: @import @import \"partials/variables\";\A 15:  \A 16: \A 17: /*********************\A 18: GENERAL STYLES\A 19: *********************/"; }

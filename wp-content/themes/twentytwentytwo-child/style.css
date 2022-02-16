@@ -1,0 +1,17 @@
+/*
+Theme Name: Twentytwentytwo Child
+Theme URI: https://github.com/wordpress/twentytwentytwo-child/
+Description: Child of 2022
+Author: Wilber Sears
+Author URI: https://william-sears.netmatters-scs.co.uk/
+Template: twentytwentytwo
+Version: 5.9.1
+*/
+@import url("../twentytwentytwo/style.css");
+
+footer.wp-block-template-part {
+ background-color: antiquewhite;
+}
+
+
+text

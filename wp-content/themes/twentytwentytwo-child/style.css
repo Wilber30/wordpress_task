@@ -1,15 +1,18 @@
+
+/* @import url("../twentytwentytwo/style.css"); */
+
+
 /*
 Theme Name: Twentytwentytwo Child
 Theme URI: https://github.com/wordpress/twentytwentytwo-child/
 Description: Child of 2022
-Version: 1.0.1
+Version: 1.2
 Author: Wilber Sears
 Author URI: https://william-sears.netmatters-scs.co.uk/
 Template: twentytwentytwo
-
 */
-@import url("../twentytwentytwo/style.css");
 
-.wp-block-post-title {
- background-color: antiquewhite;
+
+.wp-site-blocks {
+ background-color: antiquewhite !important;
 }

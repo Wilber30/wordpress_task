@@ -271,7 +271,8 @@ POSTS & CONTENT STYLES
 			header {
 				border-bottom: 1px solid $light-gray;
 				// padding: 1.5em;
-				padding: 0.5em;
+				// padding: 0.5em;
+				padding-top: 20px;
 				text-align: center;
 			}
 
@@ -312,6 +313,7 @@ POSTS & CONTENT STYLES
 
 		/* post meta */
 		.byline {
+			// display: none;
 			color: $meta-gray;
 			font-style: italic;
 			margin: 0;
@@ -325,7 +327,8 @@ POSTS & CONTENT STYLES
 			// padding: 1em;
 
 			p {
-				margin: 0 0 1.5em;
+				// margin: 0 0 1.5em;
+				margin: 1.5em 0 1.5em;
 			}
 
 

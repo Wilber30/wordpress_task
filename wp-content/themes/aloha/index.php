@@ -51,7 +51,7 @@ get_header();
 		?>
 
 	</main><!-- #main -->
-
+<script src="js/sidebar.js"></script>
 <?php
 get_sidebar();
 get_footer();

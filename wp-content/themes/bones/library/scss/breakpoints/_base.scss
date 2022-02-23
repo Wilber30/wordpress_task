@@ -159,9 +159,11 @@ HEADER STYLES
 }
 
 .norm_row {
-	top: 20%;
+	top: 16.5%;
 	right: 25%;
   position: absolute;
+	border-radius: 10px;
+  background-color: grey;
 }
 
 #inner-header {

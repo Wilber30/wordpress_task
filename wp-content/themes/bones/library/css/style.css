@@ -2255,6 +2255,14 @@ tweeners.
   }
 
   /* end .entry-content */
+}
+@media only screen and (min-width: 481px) and (max-width: 767px) {
+  /* line 104, ../scss/breakpoints/_481up.scss */
+  #inner-content {
+    flex-direction: column;
+  }
+}
+@media only screen and (min-width: 481px) {
   /*********************
   FOOTER STYLES
   *********************/

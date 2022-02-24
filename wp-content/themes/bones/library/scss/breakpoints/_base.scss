@@ -158,13 +158,7 @@ HEADER STYLES
 		height: 550px;
 }
 
-.norm_row {
-	top: 16.5%;
-	right: 25%;
-  position: absolute;
-	border-radius: 10px;
-  background-color: grey;
-}
+
 
 #inner-header {
 
@@ -887,6 +881,16 @@ FOOTER STYLES
 	color: $light-gray;
 }
 
+#inner-footer {
+	display: flex;
+	position: relative;
+}
+
+.norm_row {
+	right: 4%;
+  bottom: 4%;
+  position: absolute;
+}
 	/*
 	if you checked out the link above:
 	http://www.alistapart.com/articles/organizing-mobile/

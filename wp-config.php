@@ -21,15 +21,21 @@
 // ** Database settings - You can get this info from your web host ** //
 /** The name of the database for WordPress */
 define( 'DB_NAME', 'mycoolblog_1390' );
+// define( 'DB_NAME', 'williams_wptask' );
 
 /** Database username */
 define( 'DB_USER', 'will' );
+// define( 'DB_USER', 'williams_sears' );
 
 /** Database password */
 define( 'DB_PASSWORD', 'maine' );
-
+// define( 'DB_PASSWORD', '6O6nNLI8p2DwLeQI1m7t' );
 /** Database hostname */
 define( 'DB_HOST', '127.0.0.1:3306' );
+// define( 'DB_HOST', 'localhost' );
+
+define('WP_HOME','http://localhost:8080');
+define('WP_SITEURL','http://localhost:8080');
 
 /** Database charset to use in creating database tables. */
 define( 'DB_CHARSET', 'utf8mb4' );

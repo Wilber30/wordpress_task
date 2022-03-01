@@ -100,7 +100,7 @@ POSTS & CONTENT STYLES
 	}
 
 } /* end .entry-content */
-@media (max-width: 767px) {
+@media (min-width: 400px) and (max-width: 767px) {
 	#inner-content {
 		flex-direction: column;
 	}

@@ -2256,7 +2256,7 @@ tweeners.
 
   /* end .entry-content */
 }
-@media only screen and (min-width: 481px) and (max-width: 767px) {
+@media only screen and (min-width: 481px) and (min-width: 400px) and (max-width: 767px) {
   /* line 104, ../scss/breakpoints/_481up.scss */
   #inner-content {
     flex-direction: column;

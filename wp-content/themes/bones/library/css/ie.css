@@ -243,7 +243,7 @@ POSTS & CONTENT STYLES
 }
 
 /* end .entry-content */
-@media (max-width: 767px) {
+@media (min-width: 400px) and (max-width: 767px) {
   /* line 104, ../scss/breakpoints/_481up.scss */
   #inner-content {
     flex-direction: column;

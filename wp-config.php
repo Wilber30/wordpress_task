@@ -40,7 +40,7 @@ define('WP_HOME','https://wordpress.william-sears.netmatters-scs.co.uk');
 
 // define('WP_SITEURL','http://localhost:8080');
 
-efine('WP_SITEURL', 'https://wordpress.william-sears.netmatters-scs.co.uk');
+define('WP_SITEURL', 'https://wordpress.william-sears.netmatters-scs.co.uk');
 
 /** Database charset to use in creating database tables. */
 define( 'DB_CHARSET', 'utf8mb4' );

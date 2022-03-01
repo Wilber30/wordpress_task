@@ -25,22 +25,22 @@ define( 'DB_NAME', 'williams_wptask' );
 
 /** Database username */
 // define( 'DB_USER', 'will' );
-define( 'DB_USER', 'williams_sears' );
+define( 'DB_USER', 'williams_wellingtons' );
 
 /** Database password */
 // define( 'DB_PASSWORD', 'maine' );
-define( 'DB_PASSWORD', '6O6nNLI8p2DwLeQI1m7t' );
+define( 'DB_PASSWORD', 'Piz_gloria' );
 /** Database hostname */
 // define( 'DB_HOST', '127.0.0.1:3306' );
 define( 'DB_HOST', 'localhost' );
 
 // define('WP_HOME','http://localhost:8080');
 
-define('WP_HOME','https://wordpress.william-sears.netmatters-scs.co.uk');
+define('WP_HOME','https://wordpress.william-sears.netmatters-scs.co.uk' );
 
 // define('WP_SITEURL','http://localhost:8080');
 
-define('WP_SITEURL', 'https://wordpress.william-sears.netmatters-scs.co.uk');
+define('WP_SITEURL', 'https://wordpress.william-sears.netmatters-scs.co.uk' );
 
 /** Database charset to use in creating database tables. */
 define( 'DB_CHARSET', 'utf8mb4' );

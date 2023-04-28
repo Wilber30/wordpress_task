@@ -25,16 +25,15 @@ final class DFI {
 	}
 
 	/**
-	 * The consturctor.
-	 *
-	 * @return self
+	 * The constructor
 	 */
 	private function __construct() {
-		return $this;
 	}
 
 	/**
 	 * Uninstall
+	 *
+	 * @return void
 	 */
 	public static function uninstall() {
 		delete_option( 'dfi_image_id' );
@@ -42,6 +41,8 @@ final class DFI {
 
 	/**
 	 * L10n
+	 *
+	 * @return void
 	 */
 	public function load_plugin_textdomain() {
 		load_plugin_textdomain( 'default-featured-image', false, plugin_basename( DFI_DIR ) . '/languages/' );
@@ -57,7 +58,7 @@ final class DFI {
 	 * @param bool       $single    Optional, default is false. If true, return only the first value of the
 	 *                              specified meta_key. This parameter has no effect if meta_key is not specified.
 	 *
-	 * @return string|array Single metadata value, or array of values
+	 * @return string|string[] Single metadata value, or array of values
 	 */
 	public function set_dfi_meta_key( $null, $object_id, $meta_key, $single ) {
 		// Only affect thumbnails on the frontend, do allow ajax calls.
@@ -70,8 +71,9 @@ final class DFI {
 			return $null;
 		}
 
+		$post_type = get_post_type( $object_id );
 		// Check if this post type supports featured images.
-		if ( ! post_type_supports( get_post_type( $object_id ), 'thumbnail' ) ) {
+		if ( false !== $post_type && ! post_type_supports( $post_type, 'thumbnail' ) ) {
 			return $null; // post type does not support featured images.
 		}
 
@@ -85,7 +87,7 @@ final class DFI {
 		 */
 		if ( ! $meta_cache ) {
 			$meta_cache = update_meta_cache( 'post', array( $object_id ) );
-			if ( isset( $meta_cache[ $object_id ] ) ) {
+			if ( ! empty( $meta_cache[ $object_id ] ) ) {
 				$meta_cache = $meta_cache[ $object_id ];
 			} else {
 				$meta_cache = array();
@@ -109,6 +111,8 @@ final class DFI {
 
 	/**
 	 * Register the setting on the media settings page.
+	 *
+	 * @return void
 	 */
 	public function media_setting() {
 		register_setting(
@@ -118,7 +122,7 @@ final class DFI {
 		);
 		add_settings_field(
 			'dfi', // id.
-			__( 'Default featured image', 'default-featured-image' ), // setting title.
+			_x( 'Default featured image', 'Label on the settings page.', 'default-featured-image' ), // setting title.
 			array( &$this, 'settings_html' ), // display callback.
 			'media', // settings page.
 			'default' // settings section.
@@ -127,6 +131,8 @@ final class DFI {
 
 	/**
 	 * Display the buttons and a preview on the media settings page.
+	 *
+	 * @return void
 	 */
 	public function settings_html() {
 		$value = get_option( 'dfi_image_id' );
@@ -157,11 +163,11 @@ final class DFI {
 	 *
 	 * @param string|int $thumbnail_id The saving thumbnail.
 	 *
-	 * @return string|bool
+	 * @return int|false
 	 */
 	public function input_validation( $thumbnail_id ) {
-		if ( wp_attachment_is_image( $thumbnail_id ) ) {
-			return $thumbnail_id;
+		if ( wp_attachment_is_image( absint( $thumbnail_id ) ) ) {
+			return absint( $thumbnail_id );
 		}
 
 		return false;
@@ -169,6 +175,8 @@ final class DFI {
 
 	/**
 	 * Register the javascript
+	 *
+	 * @return void
 	 */
 	public function admin_scripts() {
 		wp_enqueue_media(); // scripts used for uploader.
@@ -200,6 +208,8 @@ final class DFI {
 
 	/**
 	 * The callback for the ajax call when the DFI changes
+	 *
+	 * @return void It's an ajax call.
 	 */
 	public function ajax_wrapper() {
 		//phpcs:disable WordPress.Security.NonceVerification.Missing
@@ -214,9 +224,9 @@ final class DFI {
 	/**
 	 * Add a settings link to the the plugin on the plugin page
 	 *
-	 * @param array $links An array of plugin action links.
+	 * @param string[] $links An array of plugin action links.
 	 *
-	 * @return array
+	 * @return string[]
 	 */
 	public function add_settings_link( $links ) {
 		$href          = admin_url( 'options-media.php#dfi-set-dfi' );
@@ -229,36 +239,39 @@ final class DFI {
 	/**
 	 * Set a default featured image if it is missing
 	 *
-	 * @param string $html              The post thumbnail HTML.
-	 * @param int    $post_id           The post ID.
-	 * @param int    $post_thumbnail_id The post thumbnail ID.
-	 * @param string $size              The post thumbnail size. Image size or array of width and height.
-	 * @param array  $attr              values (in that order). Default 'post-thumbnail'.
+	 * @param string         $html              The post thumbnail HTML.
+	 * @param int            $post_id           The post ID.
+	 * @param int            $post_thumbnail_id The post thumbnail ID.
+	 * @param string|int[]   $size              The post thumbnail size. Image size or array of width and height.
+	 * @param string|mixed[] $attr              values (in that order). Default 'post-thumbnail'.
 	 *
 	 * @return string
 	 */
 	public function show_dfi( $html, $post_id, $post_thumbnail_id, $size, $attr ) {
 		$default_thumbnail_id = get_option( 'dfi_image_id' ); // select the default thumb.
 
-		// if an image is set return that image.
+		// If an image is set return that image.
 		if ( (int) $default_thumbnail_id !== (int) $post_thumbnail_id ) {
 			return $html;
 		}
 
+		// Attributes can be a query string, parse that.
+		if ( is_string( $attr ) ) {
+			wp_parse_str( $attr, $attr );
+		}
+
 		if ( isset( $attr['class'] ) ) {
+			// There already are classes, we trust those.
 			$attr['class'] .= ' default-featured-img';
 		} else {
-			$size_class = $size;
-			if ( is_array( $size_class ) ) {
-				$size_class = 'size-' . implode( 'x', $size_class );
+			// No classes in the attributes, try to get them form the HTML.
+			$img = new \WP_HTML_Tag_Processor( $html );
+			if ( $img->next_tag() ) {
+				$attr['class'] = trim( $img->get_attribute( 'class' ) . ' default-featured-img' );
 			}
-			// attachment-$size is a default class `wp_get_attachment_image` would otherwise add. It won't add it if there are classes already there.
-			$attr = array( 'class' => "attachment-{$size_class} default-featured-img" );
 		}
 
 		$html = wp_get_attachment_image( $default_thumbnail_id, $size, false, $attr );
-		$html = apply_filters( 'dfi_thumbnail_html', $html, $post_id, $default_thumbnail_id, $size, $attr );
-
-		return $html;
+		return apply_filters( 'dfi_thumbnail_html', $html, $post_id, $default_thumbnail_id, $size, $attr );
 	}
 }

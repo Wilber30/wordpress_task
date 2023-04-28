@@ -7,7 +7,7 @@ use Automattic\WooCommerce\GoogleListingsAndAds\API\Google\Ads;
 use Automattic\WooCommerce\GoogleListingsAndAds\API\Google\AdsConversionAction;
 use Automattic\WooCommerce\GoogleListingsAndAds\API\Google\BillingSetupStatus;
 use Automattic\WooCommerce\GoogleListingsAndAds\API\Google\Merchant;
-use Automattic\WooCommerce\GoogleListingsAndAds\API\Google\Proxy as Middleware;
+use Automattic\WooCommerce\GoogleListingsAndAds\API\Google\Middleware;
 use Automattic\WooCommerce\GoogleListingsAndAds\Exception\ExceptionWithResponseData;
 use Automattic\WooCommerce\GoogleListingsAndAds\Infrastructure\Service;
 use Automattic\WooCommerce\GoogleListingsAndAds\Options\AdsAccountState;
@@ -57,13 +57,13 @@ class AccountService implements OptionsAwareInterface, Service {
 	}
 
 	/**
-	 * Get Ads IDs associated with the connected Google account.
+	 * Get Ads accounts associated with the connected Google account.
 	 *
-	 * @return int[]
+	 * @return array
 	 * @throws Exception When an API error occurs.
 	 */
-	public function get_account_ids(): array {
-		return $this->container->get( Middleware::class )->get_ads_account_ids();
+	public function get_accounts(): array {
+		return $this->container->get( Ads::class )->get_ads_accounts();
 	}
 
 	/**
@@ -72,7 +72,24 @@ class AccountService implements OptionsAwareInterface, Service {
 	 * @return array
 	 */
 	public function get_connected_account(): array {
-		return $this->container->get( Middleware::class )->get_connected_ads_account();
+		$id = $this->options->get_ads_id();
+
+		$status = [
+			'id'       => $id,
+			'currency' => $this->options->get( OptionsInterface::ADS_ACCOUNT_CURRENCY ),
+			'symbol'   => html_entity_decode( get_woocommerce_currency_symbol( $this->options->get( OptionsInterface::ADS_ACCOUNT_CURRENCY ) ) ),
+			'status'   => $id ? 'connected' : 'disconnected',
+		];
+
+		$incomplete = $this->state->last_incomplete_step();
+		if ( ! empty( $incomplete ) ) {
+			$status['status'] = 'incomplete';
+			$status['step']   = $incomplete;
+		}
+
+		$status += $this->state->get_step_data( 'set_id' );
+
+		return $status;
 	}
 
 	/**
@@ -198,6 +215,7 @@ class AccountService implements OptionsAwareInterface, Service {
 		$this->options->delete( OptionsInterface::ADS_CONVERSION_ACTION );
 		$this->options->delete( OptionsInterface::ADS_ID );
 		$this->options->delete( OptionsInterface::ADS_SETUP_COMPLETED_AT );
+		$this->options->delete( OptionsInterface::CAMPAIGN_CONVERT_STATUS );
 	}
 
 	/**

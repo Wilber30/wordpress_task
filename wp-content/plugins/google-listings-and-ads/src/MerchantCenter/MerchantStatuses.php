@@ -20,7 +20,7 @@ use Automattic\WooCommerce\GoogleListingsAndAds\Product\ProductRepository;
 use Automattic\WooCommerce\GoogleListingsAndAds\Product\ProductSyncer;
 use Automattic\WooCommerce\GoogleListingsAndAds\Value\ChannelVisibility;
 use Automattic\WooCommerce\GoogleListingsAndAds\Value\MCStatus;
-use Google\Service\ShoppingContent\ProductStatus as GoogleProductStatus;
+use Automattic\WooCommerce\GoogleListingsAndAds\Vendor\Google\Service\ShoppingContent\ProductStatus as GoogleProductStatus;
 use DateTime;
 use Exception;
 
@@ -98,7 +98,7 @@ class MerchantStatuses implements Service, ContainerAwareInterface {
 
 	/**
 	 * Get the Product Statistics (updating caches if necessary). This is the
-	 * number of product IDs with each status (active and partially active are combined).
+	 * number of product IDs with each status (approved and partially approved are combined as active).
 	 *
 	 * @param bool $force_refresh Force refresh of all product status data.
 	 *
@@ -124,8 +124,10 @@ class MerchantStatuses implements Service, ContainerAwareInterface {
 	/**
 	 * Retrieve the Merchant Center issues and total count. Refresh if the cache issues have gone stale.
 	 * Issue details are reduced, and for products, grouped by type.
-	 * Issues can be filtered by type, searched by name or ID (if product type) and paginated.
+	 * Issues can be filtered by type, severity and searched by name or ID (if product type) and paginated.
 	 * Count takes into account the type filter, but not the pagination.
+	 *
+	 * In case there are issues with severity Error we hide the other issues with lower severity.
 	 *
 	 * @param string|null $type To filter by issue type if desired.
 	 * @param int         $per_page The number of issues to return (0 for no limit).
@@ -137,7 +139,12 @@ class MerchantStatuses implements Service, ContainerAwareInterface {
 	 */
 	public function get_issues( string $type = null, int $per_page = 0, int $page = 1, bool $force_refresh = false ): array {
 		$this->maybe_refresh_status_data( $force_refresh );
-		return $this->fetch_issues( $type, $per_page, $page );
+
+		// Get only error issues
+		$severity_error_issues = $this->fetch_issues( $type, $per_page, $page, true );
+
+		// In case there are error issues we show only those, otherwise we show all the issues.
+		return $severity_error_issues['total'] > 0 ? $severity_error_issues : $this->fetch_issues( $type, $per_page, $page );
 	}
 
 	/**
@@ -178,7 +185,7 @@ class MerchantStatuses implements Service, ContainerAwareInterface {
 		$this->mc_statuses = [];
 
 		// Update account-level issues.
-		 $this->refresh_account_issues();
+		$this->refresh_account_issues();
 
 		// Update MC product issues and tabulate statistics in batches.
 		$chunk_size = apply_filters( 'woocommerce_gla_merchant_status_google_ids_chunk', 1000 );
@@ -245,11 +252,12 @@ class MerchantStatuses implements Service, ContainerAwareInterface {
 	 * @param string|null $type To filter by issue type if desired.
 	 * @param int         $per_page The number of issues to return (0 for no limit).
 	 * @param int         $page The page to start on (1-indexed).
+	 * @param bool        $only_errors Filters only the issues with error and critical severity.
 	 *
 	 * @return array The requested issues and the total count of issues.
 	 * @throws InvalidValue If the type filter is invalid.
 	 */
-	protected function fetch_issues( string $type = null, int $per_page = 0, int $page = 1 ): array {
+	protected function fetch_issues( string $type = null, int $per_page = 0, int $page = 1, bool $only_errors = false ): array {
 		/** @var MerchantIssueQuery $issue_query */
 		$issue_query = $this->container->get( MerchantIssueQuery::class );
 
@@ -269,6 +277,10 @@ class MerchantStatuses implements Service, ContainerAwareInterface {
 		if ( $per_page > 0 ) {
 			$issue_query->set_limit( $per_page );
 			$issue_query->set_offset( $per_page * ( $page - 1 ) );
+		}
+
+		if ( $only_errors ) {
+			$issue_query->where( 'severity', [ 'error', 'critical' ], 'IN' );
 		}
 
 		$issues = [];
@@ -338,7 +350,7 @@ class MerchantStatuses implements Service, ContainerAwareInterface {
 				continue;
 			}
 
-			$wc_product = get_post( $wc_product_id );
+			$wc_product = $product_helper->get_wc_product_by_wp_post( $wc_product_id );
 			if ( ! $wc_product || 'product' !== substr( $wc_product->post_type, 0, 7 ) ) {
 				// Should never reach here since the products IDS are retrieved from postmeta.
 				do_action(
@@ -372,19 +384,42 @@ class MerchantStatuses implements Service, ContainerAwareInterface {
 		$account_issues = [];
 		$created_at     = $this->cache_created_time->format( 'Y-m-d H:i:s' );
 		foreach ( $merchant->get_accountstatus()->getAccountLevelIssues() as $issue ) {
-			$account_issues[] = [
-				'product_id' => 0,
-				'product'    => __( 'All products', 'google-listings-and-ads' ),
-				'code'       => $issue->getId(),
-				'issue'      => $issue->getTitle(),
-				'action'     => __( 'Read more about this account issue', 'google-listings-and-ads' ),
-				'action_url' => $issue->getDocumentation(),
-				'created_at' => $created_at,
-				'type'       => self::TYPE_ACCOUNT,
-				'severity'   => $issue->getSeverity(),
-				'source'     => 'mc',
-			];
+			$key = md5( $issue->getTitle() );
+
+			if ( isset( $account_issues[ $key ] ) ) {
+				$account_issues[ $key ]['applicable_countries'][] = $issue->getCountry();
+			} else {
+				$account_issues[ $key ] = [
+					'product_id'           => 0,
+					'product'              => __( 'All products', 'google-listings-and-ads' ),
+					'code'                 => $issue->getId(),
+					'issue'                => $issue->getTitle(),
+					'action'               => $issue->getDetail(),
+					'action_url'           => $issue->getDocumentation(),
+					'created_at'           => $created_at,
+					'type'                 => self::TYPE_ACCOUNT,
+					'severity'             => $issue->getSeverity(),
+					'source'               => 'mc',
+					'applicable_countries' => [ $issue->getCountry() ],
+				];
+
+				$account_issues[ $key ] = $this->maybe_override_issue_values( $account_issues[ $key ] );
+			}
 		}
+
+		// Sort and encode countries
+		$account_issues = array_map(
+			function ( $issue ) {
+				sort( $issue['applicable_countries'] );
+				$issue['applicable_countries'] = json_encode(
+					array_unique(
+						$issue['applicable_countries']
+					)
+				);
+				return $issue;
+			},
+			$account_issues
+		);
 
 		/** @var MerchantIssueQuery $issue_query */
 		$issue_query = $this->container->get( MerchantIssueQuery::class );
@@ -428,7 +463,7 @@ class MerchantStatuses implements Service, ContainerAwareInterface {
 			}
 
 			$product_issue_template = [
-				'product'              => $this->product_data_lookup[ $wc_product_id ]['name'],
+				'product'              => html_entity_decode( $this->product_data_lookup[ $wc_product_id ]['name'] ),
 				'product_id'           => $wc_product_id,
 				'created_at'           => $created_at,
 				'applicable_countries' => [],
@@ -564,23 +599,66 @@ class MerchantStatuses implements Service, ContainerAwareInterface {
 	}
 
 	/**
-	 * Calculate the product status statistics and update the transient.
+	 * Calculate the synced product status statistics. It will group
+	 * the variations for the same parent.
+	 *
+	 * For the case that one variation is approved and the other disapproved:
+	 * 1. Give each status a priority.
+	 * 2. Store the last highest priority status in `$parent_statuses`.
+	 * 3. Compare if a higher priority status is found for that variable product.
+	 * 4. Loop through the `$parent_statuses` array at the end to add the final status counts.
+	 *
+	 * @return array Product status statistics.
 	 */
-	protected function update_mc_statuses() {
+	protected function calculate_synced_product_statistics(): array {
 		$product_statistics = [
 			MCStatus::APPROVED           => 0,
 			MCStatus::PARTIALLY_APPROVED => 0,
 			MCStatus::EXPIRING           => 0,
 			MCStatus::PENDING            => 0,
 			MCStatus::DISAPPROVED        => 0,
-			MCSTATUS::NOT_SYNCED         => 0,
+			MCStatus::NOT_SYNCED         => 0,
 		];
 
-		foreach ( $this->product_statuses['products'] as $statuses ) {
+		$product_statistics_priority = [
+			MCStatus::APPROVED           => 6,
+			MCStatus::PARTIALLY_APPROVED => 5,
+			MCStatus::EXPIRING           => 4,
+			MCStatus::PENDING            => 3,
+			MCStatus::DISAPPROVED        => 2,
+			MCStatus::NOT_SYNCED         => 1,
+		];
+
+		$parent_statuses = [];
+
+		foreach ( $this->product_statuses['products'] as $product_id => $statuses ) {
 			foreach ( $statuses as $status => $num_products ) {
-				$product_statistics[ $status ] += $num_products;
+				$parent_id = $this->product_data_lookup[ $product_id ]['parent_id'];
+				if ( ! $parent_id ) {
+					$product_statistics[ $status ] += $num_products;
+				} elseif ( ! isset( $parent_statuses[ $parent_id ] ) ) {
+					$parent_statuses[ $parent_id ] = $status;
+				} else {
+					$current_parent_status = $parent_statuses[ $parent_id ];
+					if ( $product_statistics_priority[ $status ] < $product_statistics_priority[ $current_parent_status ] ) {
+						$parent_statuses[ $parent_id ] = $status;
+					}
+				}
 			}
 		}
+
+		foreach ( $parent_statuses as $parent_status ) {
+			$product_statistics[ $parent_status ] += 1;
+		}
+
+		return $product_statistics;
+	}
+
+	/**
+	 * Calculate the product status statistics and update the transient.
+	 */
+	protected function update_mc_statuses() {
+		$product_statistics = $this->calculate_synced_product_statistics();
 
 		/** @var ProductRepository $product_repository */
 		$product_repository                         = $this->container->get( ProductRepository::class );
@@ -715,13 +793,20 @@ class MerchantStatuses implements Service, ContainerAwareInterface {
 	/**
 	 * Parse the code and formatted issue text out of the presync validation error text.
 	 *
+	 * Converts the error strings:
+	 * "[attribute] Error message." > "Error message [attribute]"
+	 *
+	 * Note:
+	 * If attribute is an array the name can be "[attribute[0]]".
+	 * So we need to match the additional set of square brackets.
+	 *
 	 * @param string $text
 	 *
 	 * @return string[] With indexes `code` and `issue`
 	 */
 	protected function parse_presync_issue_text( string $text ): array {
 		$matches = [];
-		preg_match( '/^\[([^\]]+)\]\s*(.+)$/', $text, $matches );
+		preg_match( '/^\[([^\]]+\]?)\]\s*(.+)$/', $text, $matches );
 		if ( count( $matches ) !== 3 ) {
 			return [
 				'code'  => 'presync_error_attrib_' . md5( $text ),
@@ -729,10 +814,16 @@ class MerchantStatuses implements Service, ContainerAwareInterface {
 			];
 		}
 
-		// Convert imageLink to image
+		// Convert attribute name "imageLink" to "image".
 		if ( 'imageLink' === $matches[1] ) {
 			$matches[1] = 'image';
 		}
+
+		// Convert attribute name "additionalImageLinks[]" to "galleryImage".
+		if ( str_starts_with( $matches[1], 'additionalImageLinks' ) ) {
+			$matches[1] = 'galleryImage';
+		}
+
 		$matches[2] = trim( $matches[2], ' .' );
 		return [
 			'code'  => 'presync_error_' . $matches[1],
@@ -760,5 +851,50 @@ class MerchantStatuses implements Service, ContainerAwareInterface {
 		);
 
 		return $is_warning ? self::SEVERITY_WARNING : self::SEVERITY_ERROR;
+	}
+
+	/**
+	 * In very rare instances, issue values need to be overridden manually.
+	 *
+	 * @param array $issue
+	 *
+	 * @return array The original issue with any possibly overridden values.
+	 */
+	private function maybe_override_issue_values( array $issue ): array {
+		/**
+		 * Code 'merchant_quality_low' for matching the original issue.
+		 * Ref: https://developers.google.com/shopping-content/guides/account-issues#merchant_quality_low
+		 *
+		 * Issue string "Account isn't eligible for free listings" for matching
+		 * the updated copy after Free and Enhanced Listings merge.
+		 *
+		 * TODO: Remove the condition of matching the $issue['issue']
+		 *       if its issue code is the same as 'merchant_quality_low'
+		 *       after Google replaces the issue title on their side.
+		 */
+		if ( 'merchant_quality_low' === $issue['code'] || "Account isn't eligible for free listings" === $issue['issue'] ) {
+			$issue['issue']      = 'Show products on additional surfaces across Google through free listings';
+			$issue['severity']   = self::SEVERITY_WARNING;
+			$issue['action_url'] = 'https://support.google.com/merchants/answer/9199328?hl=en';
+		}
+
+		/**
+		 * Reference: https://github.com/woocommerce/google-listings-and-ads/issues/1688
+		 */
+		if ( 'home_page_issue' === $issue['code'] ) {
+			$issue['issue']      = 'Website claim is lost, need to re verify and claim your website. Please reference the support link';
+			$issue['action_url'] = 'https://woocommerce.com/document/google-listings-and-ads-faqs/#reverify-website';
+		}
+
+		return $issue;
+	}
+
+	/**
+	 * Getter for get_cache_created_time
+	 *
+	 * @return DateTime The DateTime stored in cache_created_time
+	 */
+	public function get_cache_created_time(): DateTime {
+		return $this->cache_created_time;
 	}
 }

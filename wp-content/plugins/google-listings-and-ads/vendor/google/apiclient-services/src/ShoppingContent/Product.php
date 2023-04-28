@@ -15,9 +15,9 @@
  * the License.
  */
 
-namespace Google\Service\ShoppingContent;
+namespace Automattic\WooCommerce\GoogleListingsAndAds\Vendor\Google\Service\ShoppingContent;
 
-class Product extends \Google\Collection
+class Product extends \Automattic\WooCommerce\GoogleListingsAndAds\Vendor\Google\Collection
 {
   protected $collection_key = 'taxes';
   /**
@@ -140,6 +140,14 @@ class Product extends \Google\Collection
   /**
    * @var string
    */
+  public $externalSellerId;
+  /**
+   * @var string
+   */
+  public $feedLabel;
+  /**
+   * @var string
+   */
   public $gender;
   /**
    * @var string
@@ -179,6 +187,10 @@ class Product extends \Google\Collection
    * @var string
    */
   public $kind;
+  /**
+   * @var string[]
+   */
+  public $lifestyleImageLinks;
   /**
    * @var string
    */
@@ -233,6 +245,10 @@ class Product extends \Google\Collection
    * @var string
    */
   public $pattern;
+  /**
+   * @var string
+   */
+  public $pause;
   /**
    * @var string
    */
@@ -765,6 +781,34 @@ class Product extends \Google\Collection
   /**
    * @param string
    */
+  public function setExternalSellerId($externalSellerId)
+  {
+    $this->externalSellerId = $externalSellerId;
+  }
+  /**
+   * @return string
+   */
+  public function getExternalSellerId()
+  {
+    return $this->externalSellerId;
+  }
+  /**
+   * @param string
+   */
+  public function setFeedLabel($feedLabel)
+  {
+    $this->feedLabel = $feedLabel;
+  }
+  /**
+   * @return string
+   */
+  public function getFeedLabel()
+  {
+    return $this->feedLabel;
+  }
+  /**
+   * @param string
+   */
   public function setGender($gender)
   {
     $this->gender = $gender;
@@ -915,6 +959,20 @@ class Product extends \Google\Collection
   public function getKind()
   {
     return $this->kind;
+  }
+  /**
+   * @param string[]
+   */
+  public function setLifestyleImageLinks($lifestyleImageLinks)
+  {
+    $this->lifestyleImageLinks = $lifestyleImageLinks;
+  }
+  /**
+   * @return string[]
+   */
+  public function getLifestyleImageLinks()
+  {
+    return $this->lifestyleImageLinks;
   }
   /**
    * @param string
@@ -1111,6 +1169,20 @@ class Product extends \Google\Collection
   public function getPattern()
   {
     return $this->pattern;
+  }
+  /**
+   * @param string
+   */
+  public function setPause($pause)
+  {
+    $this->pause = $pause;
+  }
+  /**
+   * @return string
+   */
+  public function getPause()
+  {
+    return $this->pause;
   }
   /**
    * @param string

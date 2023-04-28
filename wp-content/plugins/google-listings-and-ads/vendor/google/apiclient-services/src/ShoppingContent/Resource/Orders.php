@@ -15,47 +15,47 @@
  * the License.
  */
 
-namespace Google\Service\ShoppingContent\Resource;
+namespace Automattic\WooCommerce\GoogleListingsAndAds\Vendor\Google\Service\ShoppingContent\Resource;
 
-use Google\Service\ShoppingContent\CaptureOrderRequest;
-use Google\Service\ShoppingContent\CaptureOrderResponse;
-use Google\Service\ShoppingContent\Order;
-use Google\Service\ShoppingContent\OrdersAcknowledgeRequest;
-use Google\Service\ShoppingContent\OrdersAcknowledgeResponse;
-use Google\Service\ShoppingContent\OrdersAdvanceTestOrderResponse;
-use Google\Service\ShoppingContent\OrdersCancelLineItemRequest;
-use Google\Service\ShoppingContent\OrdersCancelLineItemResponse;
-use Google\Service\ShoppingContent\OrdersCancelRequest;
-use Google\Service\ShoppingContent\OrdersCancelResponse;
-use Google\Service\ShoppingContent\OrdersCancelTestOrderByCustomerRequest;
-use Google\Service\ShoppingContent\OrdersCancelTestOrderByCustomerResponse;
-use Google\Service\ShoppingContent\OrdersCreateTestOrderRequest;
-use Google\Service\ShoppingContent\OrdersCreateTestOrderResponse;
-use Google\Service\ShoppingContent\OrdersCreateTestReturnRequest;
-use Google\Service\ShoppingContent\OrdersCreateTestReturnResponse;
-use Google\Service\ShoppingContent\OrdersGetByMerchantOrderIdResponse;
-use Google\Service\ShoppingContent\OrdersGetTestOrderTemplateResponse;
-use Google\Service\ShoppingContent\OrdersInStoreRefundLineItemRequest;
-use Google\Service\ShoppingContent\OrdersInStoreRefundLineItemResponse;
-use Google\Service\ShoppingContent\OrdersListResponse;
-use Google\Service\ShoppingContent\OrdersRefundItemRequest;
-use Google\Service\ShoppingContent\OrdersRefundItemResponse;
-use Google\Service\ShoppingContent\OrdersRefundOrderRequest;
-use Google\Service\ShoppingContent\OrdersRefundOrderResponse;
-use Google\Service\ShoppingContent\OrdersRejectReturnLineItemRequest;
-use Google\Service\ShoppingContent\OrdersRejectReturnLineItemResponse;
-use Google\Service\ShoppingContent\OrdersReturnRefundLineItemRequest;
-use Google\Service\ShoppingContent\OrdersReturnRefundLineItemResponse;
-use Google\Service\ShoppingContent\OrdersSetLineItemMetadataRequest;
-use Google\Service\ShoppingContent\OrdersSetLineItemMetadataResponse;
-use Google\Service\ShoppingContent\OrdersShipLineItemsRequest;
-use Google\Service\ShoppingContent\OrdersShipLineItemsResponse;
-use Google\Service\ShoppingContent\OrdersUpdateLineItemShippingDetailsRequest;
-use Google\Service\ShoppingContent\OrdersUpdateLineItemShippingDetailsResponse;
-use Google\Service\ShoppingContent\OrdersUpdateMerchantOrderIdRequest;
-use Google\Service\ShoppingContent\OrdersUpdateMerchantOrderIdResponse;
-use Google\Service\ShoppingContent\OrdersUpdateShipmentRequest;
-use Google\Service\ShoppingContent\OrdersUpdateShipmentResponse;
+use Automattic\WooCommerce\GoogleListingsAndAds\Vendor\Google\Service\ShoppingContent\CaptureOrderRequest;
+use Automattic\WooCommerce\GoogleListingsAndAds\Vendor\Google\Service\ShoppingContent\CaptureOrderResponse;
+use Automattic\WooCommerce\GoogleListingsAndAds\Vendor\Google\Service\ShoppingContent\Order;
+use Automattic\WooCommerce\GoogleListingsAndAds\Vendor\Google\Service\ShoppingContent\OrdersAcknowledgeRequest;
+use Automattic\WooCommerce\GoogleListingsAndAds\Vendor\Google\Service\ShoppingContent\OrdersAcknowledgeResponse;
+use Automattic\WooCommerce\GoogleListingsAndAds\Vendor\Google\Service\ShoppingContent\OrdersAdvanceTestOrderResponse;
+use Automattic\WooCommerce\GoogleListingsAndAds\Vendor\Google\Service\ShoppingContent\OrdersCancelLineItemRequest;
+use Automattic\WooCommerce\GoogleListingsAndAds\Vendor\Google\Service\ShoppingContent\OrdersCancelLineItemResponse;
+use Automattic\WooCommerce\GoogleListingsAndAds\Vendor\Google\Service\ShoppingContent\OrdersCancelRequest;
+use Automattic\WooCommerce\GoogleListingsAndAds\Vendor\Google\Service\ShoppingContent\OrdersCancelResponse;
+use Automattic\WooCommerce\GoogleListingsAndAds\Vendor\Google\Service\ShoppingContent\OrdersCancelTestOrderByCustomerRequest;
+use Automattic\WooCommerce\GoogleListingsAndAds\Vendor\Google\Service\ShoppingContent\OrdersCancelTestOrderByCustomerResponse;
+use Automattic\WooCommerce\GoogleListingsAndAds\Vendor\Google\Service\ShoppingContent\OrdersCreateTestOrderRequest;
+use Automattic\WooCommerce\GoogleListingsAndAds\Vendor\Google\Service\ShoppingContent\OrdersCreateTestOrderResponse;
+use Automattic\WooCommerce\GoogleListingsAndAds\Vendor\Google\Service\ShoppingContent\OrdersCreateTestReturnRequest;
+use Automattic\WooCommerce\GoogleListingsAndAds\Vendor\Google\Service\ShoppingContent\OrdersCreateTestReturnResponse;
+use Automattic\WooCommerce\GoogleListingsAndAds\Vendor\Google\Service\ShoppingContent\OrdersGetByMerchantOrderIdResponse;
+use Automattic\WooCommerce\GoogleListingsAndAds\Vendor\Google\Service\ShoppingContent\OrdersGetTestOrderTemplateResponse;
+use Automattic\WooCommerce\GoogleListingsAndAds\Vendor\Google\Service\ShoppingContent\OrdersInStoreRefundLineItemRequest;
+use Automattic\WooCommerce\GoogleListingsAndAds\Vendor\Google\Service\ShoppingContent\OrdersInStoreRefundLineItemResponse;
+use Automattic\WooCommerce\GoogleListingsAndAds\Vendor\Google\Service\ShoppingContent\OrdersListResponse;
+use Automattic\WooCommerce\GoogleListingsAndAds\Vendor\Google\Service\ShoppingContent\OrdersRefundItemRequest;
+use Automattic\WooCommerce\GoogleListingsAndAds\Vendor\Google\Service\ShoppingContent\OrdersRefundItemResponse;
+use Automattic\WooCommerce\GoogleListingsAndAds\Vendor\Google\Service\ShoppingContent\OrdersRefundOrderRequest;
+use Automattic\WooCommerce\GoogleListingsAndAds\Vendor\Google\Service\ShoppingContent\OrdersRefundOrderResponse;
+use Automattic\WooCommerce\GoogleListingsAndAds\Vendor\Google\Service\ShoppingContent\OrdersRejectReturnLineItemRequest;
+use Automattic\WooCommerce\GoogleListingsAndAds\Vendor\Google\Service\ShoppingContent\OrdersRejectReturnLineItemResponse;
+use Automattic\WooCommerce\GoogleListingsAndAds\Vendor\Google\Service\ShoppingContent\OrdersReturnRefundLineItemRequest;
+use Automattic\WooCommerce\GoogleListingsAndAds\Vendor\Google\Service\ShoppingContent\OrdersReturnRefundLineItemResponse;
+use Automattic\WooCommerce\GoogleListingsAndAds\Vendor\Google\Service\ShoppingContent\OrdersSetLineItemMetadataRequest;
+use Automattic\WooCommerce\GoogleListingsAndAds\Vendor\Google\Service\ShoppingContent\OrdersSetLineItemMetadataResponse;
+use Automattic\WooCommerce\GoogleListingsAndAds\Vendor\Google\Service\ShoppingContent\OrdersShipLineItemsRequest;
+use Automattic\WooCommerce\GoogleListingsAndAds\Vendor\Google\Service\ShoppingContent\OrdersShipLineItemsResponse;
+use Automattic\WooCommerce\GoogleListingsAndAds\Vendor\Google\Service\ShoppingContent\OrdersUpdateLineItemShippingDetailsRequest;
+use Automattic\WooCommerce\GoogleListingsAndAds\Vendor\Google\Service\ShoppingContent\OrdersUpdateLineItemShippingDetailsResponse;
+use Automattic\WooCommerce\GoogleListingsAndAds\Vendor\Google\Service\ShoppingContent\OrdersUpdateMerchantOrderIdRequest;
+use Automattic\WooCommerce\GoogleListingsAndAds\Vendor\Google\Service\ShoppingContent\OrdersUpdateMerchantOrderIdResponse;
+use Automattic\WooCommerce\GoogleListingsAndAds\Vendor\Google\Service\ShoppingContent\OrdersUpdateShipmentRequest;
+use Automattic\WooCommerce\GoogleListingsAndAds\Vendor\Google\Service\ShoppingContent\OrdersUpdateShipmentResponse;
 
 /**
  * The "orders" collection of methods.
@@ -65,7 +65,7 @@ use Google\Service\ShoppingContent\OrdersUpdateShipmentResponse;
  *   $orders = $contentService->orders;
  *  </code>
  */
-class Orders extends \Google\Service\Resource
+class Orders extends \Automattic\WooCommerce\GoogleListingsAndAds\Vendor\Google\Service\Resource
 {
   /**
    * Marks an order as acknowledged. (orders.acknowledge)
@@ -246,7 +246,7 @@ class Orders extends \Google\Service\Resource
    * @param array $optParams Optional parameters.
    *
    * @opt_param string country The country of the template to retrieve. Defaults
-   * to `US`.
+   * to "`US`".
    * @return OrdersGetTestOrderTemplateResponse
    */
   public function gettestordertemplate($merchantId, $templateName, $optParams = [])
@@ -257,13 +257,13 @@ class Orders extends \Google\Service\Resource
   }
   /**
    * Deprecated. Notifies that item return and refund was handled directly by
-   * merchant outside of Google payments processing (e.g. cash refund done in
-   * store). Note: We recommend calling the returnrefundlineitem method to refund
-   * in-store returns. We will issue the refund directly to the customer. This
-   * helps to prevent possible differences arising between merchant and Google
-   * transaction records. We also recommend having the point of sale system
+   * merchant outside of Google payments processing (for example, cash refund done
+   * in store). Note: We recommend calling the returnrefundlineitem method to
+   * refund in-store returns. We will issue the refund directly to the customer.
+   * This helps to prevent possible differences arising between merchant and
+   * Google transaction records. We also recommend having the point of sale system
    * communicate with Google to ensure that customers do not receive a double
-   * refund by first refunding via Google then via an in-store return.
+   * refund by first refunding through Google then through an in-store return.
    * (orders.instorerefundlineitem)
    *
    * @param string $merchantId The ID of the account that manages the order. This
@@ -302,7 +302,7 @@ class Orders extends \Google\Service\Resource
    * @opt_param string placedDateStart Obtains orders placed after this date
    * (inclusively), in ISO 8601 format.
    * @opt_param string statuses Obtains orders that match any of the specified
-   * statuses. Please note that `active` is a shortcut for `pendingShipment` and
+   * statuses. Note that `active` is a shortcut for `pendingShipment` and
    * `partiallyShipped`, and `completed` is a shortcut for `shipped`,
    * `partiallyDelivered`, `delivered`, `partiallyReturned`, `returned`, and
    * `canceled`.
@@ -364,11 +364,11 @@ class Orders extends \Google\Service\Resource
   }
   /**
    * Returns and refunds a line item. Note that this method can only be called on
-   * fully shipped orders. Please also note that the Orderreturns API is the
-   * preferred way to handle returns after you receive a return from a customer.
-   * You can use Orderreturns.list or Orderreturns.get to search for the return,
-   * and then use Orderreturns.processreturn to issue the refund. If the return
-   * cannot be found, then we recommend using this API to issue a refund.
+   * fully shipped orders. The Orderreturns API is the preferred way to handle
+   * returns after you receive a return from a customer. You can use
+   * Orderreturns.list or Orderreturns.get to search for the return, and then use
+   * Orderreturns.processreturn to issue the refund. If the return cannot be
+   * found, then we recommend using this API to issue a refund.
    * (orders.returnrefundlineitem)
    *
    * @param string $merchantId The ID of the account that manages the order. This
@@ -388,8 +388,8 @@ class Orders extends \Google\Service\Resource
    * Sets (or overrides if it already exists) merchant provided annotations in the
    * form of key-value pairs. A common use case would be to supply us with
    * additional structured information about a line item that cannot be provided
-   * via other methods. Submitted key-value pairs can be retrieved as part of the
-   * orders resource. (orders.setlineitemmetadata)
+   * through other methods. Submitted key-value pairs can be retrieved as part of
+   * the orders resource. (orders.setlineitemmetadata)
    *
    * @param string $merchantId The ID of the account that manages the order. This
    * cannot be a multi-client account.

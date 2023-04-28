@@ -5,18 +5,18 @@ namespace Automattic\WooCommerce\GoogleListingsAndAds\API\Google;
 
 use Automattic\WooCommerce\GoogleListingsAndAds\DB\Query\ShippingRateQuery as RateQuery;
 use Automattic\WooCommerce\GoogleListingsAndAds\DB\Query\ShippingTimeQuery as TimeQuery;
+use Automattic\WooCommerce\GoogleListingsAndAds\MerchantCenter\TargetAudience;
 use Automattic\WooCommerce\GoogleListingsAndAds\Options\OptionsInterface;
 use Automattic\WooCommerce\GoogleListingsAndAds\Proxies\WC;
-use Google\Service\ShoppingContent;
-use Google\Service\ShoppingContent\AccountAddress;
-use Google\Service\ShoppingContent\AccountTax;
-use Google\Service\ShoppingContent\AccountTaxTaxRule as TaxRule;
-use Google\Service\ShoppingContent\DeliveryTime;
-use Google\Service\ShoppingContent\Price;
-use Google\Service\ShoppingContent\RateGroup;
-use Google\Service\ShoppingContent\Service;
-use Google\Service\ShoppingContent\ShippingSettings;
-use Google\Service\ShoppingContent\Value;
+use Automattic\WooCommerce\GoogleListingsAndAds\Shipping\CountryRatesCollection;
+use Automattic\WooCommerce\GoogleListingsAndAds\Shipping\GoogleAdapter\DBShippingSettingsAdapter;
+use Automattic\WooCommerce\GoogleListingsAndAds\Shipping\GoogleAdapter\WCShippingSettingsAdapter;
+use Automattic\WooCommerce\GoogleListingsAndAds\Shipping\ShippingZone;
+use Automattic\WooCommerce\GoogleListingsAndAds\Vendor\Google\Service\ShoppingContent;
+use Automattic\WooCommerce\GoogleListingsAndAds\Vendor\Google\Service\ShoppingContent\AccountAddress;
+use Automattic\WooCommerce\GoogleListingsAndAds\Vendor\Google\Service\ShoppingContent\AccountTax;
+use Automattic\WooCommerce\GoogleListingsAndAds\Vendor\Google\Service\ShoppingContent\AccountTaxTaxRule as TaxRule;
+use Automattic\WooCommerce\GoogleListingsAndAds\Vendor\Google\Service\ShoppingContent\ShippingSettings;
 use Psr\Container\ContainerInterface;
 
 defined( 'ABSPATH' ) || exit;
@@ -50,19 +50,7 @@ class Settings {
 			return;
 		}
 
-		$settings = new ShippingSettings();
-		$settings->setAccountId( $this->get_account_id() );
-
-		$services = [];
-		foreach ( $this->get_rates() as ['country' => $country, 'currency' => $currency, 'rate' => $rate] ) {
-			$services[] = $this->create_main_service( $country, $currency, $rate );
-
-			if ( $this->has_free_shipping_option() ) {
-				$services[] = $this->create_free_shipping_service( $country, $currency );
-			}
-		}
-
-		$settings->setServices( $services );
+		$settings = $this->generate_shipping_settings();
 
 		$this->get_shopping_service()->shippingsettings->update(
 			$this->get_merchant_id(),
@@ -77,7 +65,55 @@ class Settings {
 	 * @return bool
 	 */
 	protected function should_sync_shipping(): bool {
-		return 'flat' === $this->get_settings()['shipping_rate'];
+		$shipping_rate = $this->get_settings()['shipping_rate'] ?? '';
+		$shipping_time = $this->get_settings()['shipping_time'] ?? '';
+		return in_array( $shipping_rate, [ 'flat', 'automatic' ], true ) && 'flat' === $shipping_time;
+	}
+
+	/**
+	 * Whether we should get the shipping settings from the WooCommerce settings.
+	 *
+	 * @return bool
+	 *
+	 * @since 1.12.0
+	 */
+	public function should_get_shipping_rates_from_woocommerce(): bool {
+		return 'automatic' === ( $this->get_settings()['shipping_rate'] ?? '' );
+	}
+
+	/**
+	 * Generate a ShippingSettings object for syncing the store shipping settings to Merchant Center.
+	 *
+	 * @return ShippingSettings
+	 *
+	 * @since 2.1.0
+	 */
+	protected function generate_shipping_settings(): ShippingSettings {
+		$times = $this->get_shipping_times();
+
+		/** @var WC $wc_proxy */
+		$wc_proxy = $this->container->get( WC::class );
+		$currency = $wc_proxy->get_woocommerce_currency();
+
+		if ( $this->should_get_shipping_rates_from_woocommerce() ) {
+			return new WCShippingSettingsAdapter(
+				[
+					'currency'          => $currency,
+					'rates_collections' => $this->get_shipping_rates_collections_from_woocommerce(),
+					'delivery_times'    => $times,
+					'accountId'         => $this->get_account_id(),
+				]
+			);
+		}
+
+		return new DBShippingSettingsAdapter(
+			[
+				'currency'       => $currency,
+				'db_rates'       => $this->get_shipping_rates_from_database(),
+				'delivery_times' => $times,
+				'accountId'      => $this->get_account_id(),
+			]
+		);
 	}
 
 	/**
@@ -104,7 +140,7 @@ class Settings {
 			return false;
 		}
 
-		return 'destination' === ( $this->get_options_object()->get( OptionsInterface::MERCHANT_CENTER )['tax_rate'] ?? 'destination' );
+		return 'destination' === ( $this->get_settings()['tax_rate'] ?? 'destination' );
 	}
 
 	/**
@@ -137,7 +173,7 @@ class Settings {
 	 *
 	 * @return array
 	 */
-	protected function get_times(): array {
+	protected function get_shipping_times(): array {
 		static $times = null;
 
 		if ( null === $times ) {
@@ -153,87 +189,31 @@ class Settings {
 	 *
 	 * @return array
 	 */
-	protected function get_rates(): array {
+	protected function get_shipping_rates_from_database(): array {
 		$rate_query = $this->container->get( RateQuery::class );
 
 		return $rate_query->get_results();
 	}
 
 	/**
-	 * Create the DeliveryTime object.
+	 * Get shipping rate data from WooCommerce shipping settings.
 	 *
-	 * @param int $delivery_days
-	 *
-	 * @return DeliveryTime
+	 * @return CountryRatesCollection[] Array of rates collections for each target country specified in settings.
 	 */
-	protected function create_time_object( int $delivery_days ): DeliveryTime {
-		$time = new DeliveryTime();
-		$time->setMinHandlingTimeInDays( 0 );
-		$time->setMaxHandlingTimeInDays( 0 );
-		$time->setMinTransitTimeInDays( $delivery_days );
-		$time->setMaxTransitTimeInDays( $delivery_days );
+	protected function get_shipping_rates_collections_from_woocommerce(): array {
+		/** @var TargetAudience $target_audience */
+		$target_audience  = $this->container->get( TargetAudience::class );
+		$target_countries = $target_audience->get_target_countries();
+		/** @var ShippingZone $shipping_zone */
+		$shipping_zone = $this->container->get( ShippingZone::class );
 
-		return $time;
-	}
+		$rates = [];
+		foreach ( $target_countries as $country ) {
+			$location_rates    = $shipping_zone->get_shipping_rates_for_country( $country );
+			$rates[ $country ] = new CountryRatesCollection( $country, $location_rates );
+		}
 
-	/**
-	 * Create the array of rate groups for the service.
-	 *
-	 * @param string $currency
-	 * @param mixed  $rate
-	 *
-	 * @return array
-	 */
-	protected function create_rate_groups( string $currency, $rate ): array {
-		return [ $this->create_rate_group_object( $currency, $rate ) ];
-	}
-
-	/**
-	 * Create a rate group object for the shopping settings.
-	 *
-	 * @param string $currency
-	 * @param mixed  $rate
-	 *
-	 * @return RateGroup
-	 */
-	protected function create_rate_group_object( string $currency, $rate ): RateGroup {
-		$price = new Price();
-		$price->setCurrency( $currency );
-		$price->setValue( $rate );
-
-		$value = new Value();
-		$value->setFlatRate( $price );
-
-		$rate_group = new RateGroup();
-		$rate_group->setSingleValue( $value );
-		$rate_group->setName(
-			sprintf(
-				/* translators: %1 is the shipping rate, %2 is the currency (e.g. USD) */
-				__( 'Flat rate - %1$s %2$s', 'google-listings-and-ads' ),
-				$rate,
-				$currency
-			)
-		);
-
-		return $rate_group;
-	}
-
-	/**
-	 * Determine whether free shipping is offered.
-	 *
-	 * @return bool
-	 */
-	protected function has_free_shipping_option(): bool {
-		return boolval( $this->get_settings()['offers_free_shipping'] ?? false );
-	}
-
-	/**
-	 * Get the free shipping minimum order value.
-	 *
-	 * @return int
-	 */
-	protected function get_free_shipping_minimum(): int {
-		return intval( $this->get_settings()['free_shipping_threshold'] );
+		return $rates;
 	}
 
 	/**
@@ -241,61 +221,6 @@ class Settings {
 	 */
 	protected function get_options_object(): OptionsInterface {
 		return $this->container->get( OptionsInterface::class );
-	}
-
-	/**
-	 * Create the main shipping service object.
-	 *
-	 * @param string $country
-	 * @param string $currency
-	 * @param mixed  $rate
-	 *
-	 * @return Service
-	 */
-	protected function create_main_service( string $country, string $currency, $rate ): Service {
-		$unique  = sprintf( '%04x', mt_rand( 0, 0xffff ) );
-		$service = new Service();
-		$service->setActive( true );
-		$service->setDeliveryCountry( $country );
-		$service->setCurrency( $currency );
-		$service->setName(
-			sprintf(
-				/* translators: %1 is a random 4-digit string, %2 is the rate, %3 is the currency, %4 is the country code  */
-				__( '[%1$s] Google Listings and Ads generated service - %2$s %3$s to %4$s', 'google-listings-and-ads' ),
-				$unique,
-				$rate,
-				$currency,
-				$country
-			)
-		);
-
-		$service->setRateGroups( $this->create_rate_groups( $currency, $rate ) );
-
-		$times = $this->get_times();
-		if ( array_key_exists( $country, $times ) ) {
-			$service->setDeliveryTime( $this->create_time_object( intval( $times[ $country ] ) ) );
-		}
-
-		return $service;
-	}
-
-	/**
-	 * Create a free shipping service.
-	 *
-	 * @param string $country
-	 * @param string $currency
-	 *
-	 * @return Service
-	 */
-	protected function create_free_shipping_service( string $country, string $currency ): Service {
-		$price = new Price();
-		$price->setValue( $this->get_free_shipping_minimum() );
-		$price->setCurrency( $currency );
-
-		$service = $this->create_main_service( $country, $currency, 0 );
-		$service->setMinimumOrderValue( $price );
-
-		return $service;
 	}
 
 	/**
@@ -465,6 +390,7 @@ class Settings {
 	 * @return array
 	 */
 	protected function get_settings(): array {
-		return $this->get_options_object()->get( OptionsInterface::MERCHANT_CENTER );
+		$settings = $this->get_options_object()->get( OptionsInterface::MERCHANT_CENTER );
+		return is_array( $settings ) ? $settings : [];
 	}
 }

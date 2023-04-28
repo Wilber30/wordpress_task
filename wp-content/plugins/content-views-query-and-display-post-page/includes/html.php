@@ -867,7 +867,7 @@ if ( !class_exists( 'PT_CV_Html' ) ) {
 		static function get_readmore_text( $args ) {
 			$result = '';
 			if ( !empty( $args[ 'readmore-text' ] ) ) {
-				$result = stripslashes( cv_sanitize_tag_content( $args[ 'readmore-text' ] ) );
+				$result = stripslashes( cv_sanitize_tag_content( apply_filters( PT_CV_PREFIX_ . 'maybe_translate', $args[ 'readmore-text' ], 'read more text' ) ) );
 				// CV translation
 				if ( $result === 'Read More' ) {
 					$result = __( 'Read More', 'content-views-query-and-display-post-page' );

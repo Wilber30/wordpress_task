@@ -9,7 +9,6 @@ use Automattic\WooCommerce\GoogleListingsAndAds\API\Site\Controllers\BaseReports
 use Automattic\WooCommerce\GoogleListingsAndAds\API\TransportMethods;
 use Exception;
 use WP_REST_Request as Request;
-use WP_REST_Response as Response;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -64,7 +63,7 @@ class ReportsController extends BaseReportsController {
 				$data = $ads->get_report_data( 'campaigns', $this->prepare_query_arguments( $request ) );
 				return $this->prepare_item_for_response( $data, $request );
 			} catch ( Exception $e ) {
-				return new Response( [ 'message' => $e->getMessage() ], $e->getCode() ?: 400 );
+				return $this->response_from_exception( $e );
 			}
 		};
 	}
@@ -82,19 +81,19 @@ class ReportsController extends BaseReportsController {
 				$data = $ads->get_report_data( 'products', $this->prepare_query_arguments( $request ) );
 				return $this->prepare_item_for_response( $data, $request );
 			} catch ( Exception $e ) {
-				return new Response( [ 'message' => $e->getMessage() ], $e->getCode() ?: 400 );
+				return $this->response_from_exception( $e );
 			}
 		};
 	}
 
 	/**
-	 * Add collection parameters.
-	 *
-	 * @param array $params Initial set of collection parameters.
+	 * Get the query params for collections.
 	 *
 	 * @return array
 	 */
-	protected function add_collection_parameters( array $params ): array {
+	public function get_collection_params(): array {
+		$params = parent::get_collection_params();
+
 		$params['interval'] = [
 			'description'       => __( 'Time interval to use for segments in the returned data.', 'google-listings-and-ads' ),
 			'type'              => 'string',
@@ -141,23 +140,28 @@ class ReportsController extends BaseReportsController {
 				'items' => [
 					'type'       => 'object',
 					'properties' => [
-						'id'        => [
+						'id'          => [
 							'type'        => 'integer',
 							'description' => __( 'ID number.', 'google-listings-and-ads' ),
 							'context'     => [ 'view' ],
 						],
-						'name'      => [
+						'name'        => [
 							'type'        => 'string',
 							'description' => __( 'Campaign name.', 'google-listings-and-ads' ),
 							'context'     => [ 'view', 'edit' ],
 						],
-						'status'    => [
+						'status'      => [
 							'type'        => 'string',
 							'enum'        => CampaignStatus::labels(),
 							'description' => __( 'Campaign status.', 'google-listings-and-ads' ),
 							'context'     => [ 'view' ],
 						],
-						'subtotals' => $this->get_totals_schema(),
+						'isConverted' => [
+							'type'        => 'boolean',
+							'description' => __( 'Whether the campaign has been converted', 'google-listings-and-ads' ),
+							'context'     => [ 'view' ],
+						],
+						'subtotals'   => $this->get_totals_schema(),
 					],
 				],
 			],

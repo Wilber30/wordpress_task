@@ -3,7 +3,7 @@
 Plugin Name: CSS & JavaScript Toolbox
 Plugin URI: https://css-javascript-toolbox.com/
 Description: Easily add CSS, JavaScript, HTML and PHP code to unique CJT code blocks and assign them anywhere on your website.
-Version: 11.5
+Version: 11.6
 Author: Wipeout Media
 Author URI: https://css-javascript-toolbox.com
 License:

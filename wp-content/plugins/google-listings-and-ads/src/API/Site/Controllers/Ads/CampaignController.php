@@ -5,14 +5,15 @@ namespace Automattic\WooCommerce\GoogleListingsAndAds\API\Site\Controllers\Ads;
 
 use Automattic\WooCommerce\GoogleListingsAndAds\API\Google\AdsCampaign;
 use Automattic\WooCommerce\GoogleListingsAndAds\API\Google\CampaignStatus;
+use Automattic\WooCommerce\GoogleListingsAndAds\API\Google\CampaignType;
 use Automattic\WooCommerce\GoogleListingsAndAds\API\Site\Controllers\BaseController;
 use Automattic\WooCommerce\GoogleListingsAndAds\API\Site\Controllers\CountryCodeTrait;
 use Automattic\WooCommerce\GoogleListingsAndAds\API\TransportMethods;
+use Automattic\WooCommerce\GoogleListingsAndAds\Google\GoogleHelperAwareInterface;
 use Automattic\WooCommerce\GoogleListingsAndAds\Internal\Interfaces\ISO3166AwareInterface;
 use Automattic\WooCommerce\GoogleListingsAndAds\Proxies\RESTServer;
 use DateTime;
 use Exception;
-use Psr\Container\ContainerInterface;
 use WP_REST_Request as Request;
 use WP_REST_Response as Response;
 
@@ -23,7 +24,7 @@ defined( 'ABSPATH' ) || exit;
  *
  * @package Automattic\WooCommerce\GoogleListingsAndAds\API\Site\Controllers\Ads
  */
-class CampaignController extends BaseController implements ISO3166AwareInterface {
+class CampaignController extends BaseController implements GoogleHelperAwareInterface, ISO3166AwareInterface {
 
 	use CountryCodeTrait;
 
@@ -33,13 +34,14 @@ class CampaignController extends BaseController implements ISO3166AwareInterface
 	protected $ads_campaign;
 
 	/**
-	 * BaseController constructor.
+	 * CampaignController constructor.
 	 *
-	 * @param ContainerInterface $container
+	 * @param RESTServer  $server
+	 * @param AdsCampaign $ads_campaign
 	 */
-	public function __construct( ContainerInterface $container ) {
-		parent::__construct( $container->get( RESTServer::class ) );
-		$this->ads_campaign = $container->get( AdsCampaign::class );
+	public function __construct( RESTServer $server, AdsCampaign $ads_campaign ) {
+		parent::__construct( $server );
+		$this->ads_campaign = $ads_campaign;
 	}
 
 	/**
@@ -53,6 +55,7 @@ class CampaignController extends BaseController implements ISO3166AwareInterface
 					'methods'             => TransportMethods::READABLE,
 					'callback'            => $this->get_campaigns_callback(),
 					'permission_callback' => $this->get_permission_callback(),
+					'args'                => $this->get_collection_params(),
 				],
 				[
 					'methods'             => TransportMethods::CREATABLE,
@@ -96,15 +99,17 @@ class CampaignController extends BaseController implements ISO3166AwareInterface
 	protected function get_campaigns_callback(): callable {
 		return function( Request $request ) {
 			try {
+				$exclude_removed = $request->get_param( 'exclude_removed' );
+
 				return array_map(
 					function( $campaign ) use ( $request ) {
 						$data = $this->prepare_item_for_response( $campaign, $request );
 						return $this->prepare_response_for_collection( $data );
 					},
-					$this->ads_campaign->get_campaigns()
+					$this->ads_campaign->get_campaigns( $exclude_removed )
 				);
 			} catch ( Exception $e ) {
-				return new Response( [ 'message' => $e->getMessage() ], $e->getCode() ?: 400 );
+				return $this->response_from_exception( $e );
 			}
 		};
 	}
@@ -133,7 +138,7 @@ class CampaignController extends BaseController implements ISO3166AwareInterface
 
 				return $this->prepare_item_for_response( $campaign, $request );
 			} catch ( Exception $e ) {
-				return new Response( [ 'message' => $e->getMessage() ], $e->getCode() ?: 400 );
+				return $this->response_from_exception( $e );
 			}
 		};
 	}
@@ -161,7 +166,7 @@ class CampaignController extends BaseController implements ISO3166AwareInterface
 
 				return $this->prepare_item_for_response( $campaign, $request );
 			} catch ( Exception $e ) {
-				return new Response( [ 'message' => $e->getMessage() ], $e->getCode() ?: 400 );
+				return $this->response_from_exception( $e );
 			}
 		};
 	}
@@ -193,7 +198,7 @@ class CampaignController extends BaseController implements ISO3166AwareInterface
 					'id'      => $campaign_id,
 				];
 			} catch ( Exception $e ) {
-				return new Response( [ 'message' => $e->getMessage() ], $e->getCode() ?: 400 );
+				return $this->response_from_exception( $e );
 			}
 		};
 	}
@@ -214,7 +219,7 @@ class CampaignController extends BaseController implements ISO3166AwareInterface
 					'id'      => $deleted_id,
 				];
 			} catch ( Exception $e ) {
-				return new Response( [ 'message' => $e->getMessage() ], $e->getCode() ?: 400 );
+				return $this->response_from_exception( $e );
 			}
 		};
 	}
@@ -245,46 +250,80 @@ class CampaignController extends BaseController implements ISO3166AwareInterface
 	}
 
 	/**
+	 * Get the query params for collections.
+	 *
+	 * @return array
+	 */
+	public function get_collection_params(): array {
+		return [
+			'exclude_removed' => [
+				'description'       => __( 'Exclude removed campaigns.', 'google-listings-and-ads' ),
+				'type'              => 'boolean',
+				'default'           => true,
+				'validate_callback' => 'rest_validate_request_arg',
+			],
+		];
+	}
+
+	/**
 	 * Get the item schema for the controller.
 	 *
 	 * @return array
 	 */
 	protected function get_schema_properties(): array {
 		return [
-			'id'      => [
+			'id'                 => [
 				'type'        => 'integer',
 				'description' => __( 'ID number.', 'google-listings-and-ads' ),
 				'context'     => [ 'view' ],
 				'readonly'    => true,
 			],
-			'name'    => [
+			'name'               => [
 				'type'              => 'string',
 				'description'       => __( 'Descriptive campaign name.', 'google-listings-and-ads' ),
 				'context'           => [ 'view', 'edit' ],
 				'validate_callback' => 'rest_validate_request_arg',
 				'required'          => false,
 			],
-			'status'  => [
+			'status'             => [
 				'type'              => 'string',
 				'enum'              => CampaignStatus::labels(),
 				'description'       => __( 'Campaign status.', 'google-listings-and-ads' ),
 				'context'           => [ 'view', 'edit' ],
 				'validate_callback' => 'rest_validate_request_arg',
 			],
-			'amount'  => [
+			'type'               => [
+				'type'              => 'string',
+				'enum'              => CampaignType::labels(),
+				'description'       => __( 'Campaign type.', 'google-listings-and-ads' ),
+				'context'           => [ 'view', 'edit' ],
+				'validate_callback' => 'rest_validate_request_arg',
+			],
+			'amount'             => [
 				'type'              => 'number',
 				'description'       => __( 'Daily budget amount in the local currency.', 'google-listings-and-ads' ),
 				'context'           => [ 'view', 'edit' ],
 				'validate_callback' => 'rest_validate_request_arg',
 				'required'          => true,
 			],
-			'country' => [
+			'country'            => [
 				'type'              => 'string',
-				'description'       => __( 'Country code in ISO 3166-1 alpha-2 format.', 'google-listings-and-ads' ),
+				'description'       => __( 'Country code of sale country in ISO 3166-1 alpha-2 format.', 'google-listings-and-ads' ),
 				'context'           => [ 'view', 'edit' ],
 				'sanitize_callback' => $this->get_country_code_sanitize_callback(),
-				'validate_callback' => $this->get_country_code_validate_callback(),
+				'validate_callback' => $this->get_supported_country_code_validate_callback(),
+				'readonly'          => true,
+			],
+			'targeted_locations' => [
+				'type'              => 'array',
+				'description'       => __( 'The locations that an Ads campaign is targeting in ISO 3166-1 alpha-2 format.', 'google-listings-and-ads' ),
+				'context'           => [ 'view', 'edit' ],
+				'sanitize_callback' => $this->get_country_code_sanitize_callback(),
+				'validate_callback' => $this->get_supported_country_code_validate_callback(),
 				'required'          => true,
+				'items'             => [
+					'type' => 'string',
+				],
 			],
 		];
 	}

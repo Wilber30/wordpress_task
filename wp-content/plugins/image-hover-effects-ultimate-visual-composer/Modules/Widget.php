@@ -4,16 +4,6 @@ namespace OXI_FLIP_BOX_PLUGINS\Modules;
 
 class Widget extends \WP_Widget {
 
-    function __construct() {
-        parent::__construct(
-                'oxi_flip_box_widget', esc_html__('Flipbox - Awesomes Flip Boxes Image Overlay', 'image-hover-effects-ultimate-visual-composer'), array('description' => esc_html__('Flipbox - Awesomes Flip Boxes Image Overlay', 'image-hover-effects-ultimate-visual-composer'),)
-        );
-    }
-
-    public function flip_register_flipwidget() {
-        register_widget($this);
-    }
-
     public function widget($args, $instance) {
         $title = apply_filters('widget_title', $instance['title']);
         echo $args['before_widget'];
@@ -29,10 +19,20 @@ class Widget extends \WP_Widget {
         }
         ?>
         <p>
-            <label for="<?php echo $this->get_field_id('title'); ?>"><?php _e('Style ID:'); ?></label>
-            <input class="widefat" id="<?php echo $this->get_field_id('title'); ?>" name="<?php echo $this->get_field_name('title'); ?>" type="text" value="<?php echo esc_attr($title); ?>" />
+            <label for="<?php echo esc_attr($this->get_field_id('title')); ?>"><?php esc_html('Style ID:'); ?></label>
+            <input class="widefat" id="<?php echo esc_attr($this->get_field_id('title')); ?>" name="<?php echo esc_attr($this->get_field_name('title')); ?>" type="text" value="<?php echo esc_attr($title); ?>" />
         </p>
         <?php
+    }
+
+    function __construct() {
+        parent::__construct(
+                'oxi_flip_box_widget', esc_html__('Flipbox - Awesomes Flip Boxes Image Overlay', 'image-hover-effects-ultimate-visual-composer'), array('description' => esc_html__('Flipbox - Awesomes Flip Boxes Image Overlay', 'image-hover-effects-ultimate-visual-composer'),)
+        );
+    }
+
+    public function flip_register_flipwidget() {
+        register_widget($this);
     }
 
     public function update($new_instance, $old_instance) {

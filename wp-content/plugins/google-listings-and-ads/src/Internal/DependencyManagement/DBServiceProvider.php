@@ -4,20 +4,25 @@ declare( strict_types=1 );
 namespace Automattic\WooCommerce\GoogleListingsAndAds\Internal\DependencyManagement;
 
 use Automattic\WooCommerce\GoogleListingsAndAds\DB\Migration\MigrationInterface;
+use Automattic\WooCommerce\GoogleListingsAndAds\DB\Migration\Migration20211228T1640692399;
+use Automattic\WooCommerce\GoogleListingsAndAds\DB\Migration\Migration20220524T1653383133;
 use Automattic\WooCommerce\GoogleListingsAndAds\DB\Migration\MigrationVersion141;
 use Automattic\WooCommerce\GoogleListingsAndAds\DB\Migration\Migrator;
 use Automattic\WooCommerce\GoogleListingsAndAds\DB\ProductFeedQueryHelper;
 use Automattic\WooCommerce\GoogleListingsAndAds\DB\ProductMetaQueryHelper;
+use Automattic\WooCommerce\GoogleListingsAndAds\DB\Query\AttributeMappingRulesQuery;
 use Automattic\WooCommerce\GoogleListingsAndAds\DB\Query\BudgetRecommendationQuery;
 use Automattic\WooCommerce\GoogleListingsAndAds\DB\Query\MerchantIssueQuery;
 use Automattic\WooCommerce\GoogleListingsAndAds\DB\Query\ShippingRateQuery;
 use Automattic\WooCommerce\GoogleListingsAndAds\DB\Query\ShippingTimeQuery;
+use Automattic\WooCommerce\GoogleListingsAndAds\DB\Table\AttributeMappingRulesTable;
 use Automattic\WooCommerce\GoogleListingsAndAds\DB\Table\BudgetRecommendationTable;
 use Automattic\WooCommerce\GoogleListingsAndAds\DB\Table\MerchantIssueTable;
 use Automattic\WooCommerce\GoogleListingsAndAds\DB\Table\ShippingRateTable;
 use Automattic\WooCommerce\GoogleListingsAndAds\DB\Table\ShippingTimeTable;
 use Automattic\WooCommerce\GoogleListingsAndAds\Exception\InvalidClass;
 use Automattic\WooCommerce\GoogleListingsAndAds\Exception\ValidateInterface;
+use Automattic\WooCommerce\GoogleListingsAndAds\Options\OptionsInterface;
 use Automattic\WooCommerce\GoogleListingsAndAds\Product\ProductRepository;
 use Automattic\WooCommerce\GoogleListingsAndAds\Proxies\WP;
 use Automattic\WooCommerce\GoogleListingsAndAds\Vendor\League\Container\Definition\DefinitionInterface;
@@ -42,18 +47,19 @@ class DBServiceProvider extends AbstractServiceProvider {
 	 * @var array
 	 */
 	protected $provides = [
-		ShippingRateTable::class         => true,
-		ShippingRateQuery::class         => true,
-		ShippingTimeTable::class         => true,
-		ShippingTimeQuery::class         => true,
-		BudgetRecommendationTable::class => true,
-		BudgetRecommendationQuery::class => true,
-		MerchantIssueTable::class        => true,
-		MerchantIssueQuery::class        => true,
-		ProductFeedQueryHelper::class    => true,
-		ProductMetaQueryHelper::class    => true,
-		MigrationInterface::class        => true,
-		Migrator::class                  => true,
+		AttributeMappingRulesTable::class => true,
+		ShippingRateTable::class          => true,
+		ShippingRateQuery::class          => true,
+		ShippingTimeTable::class          => true,
+		ShippingTimeQuery::class          => true,
+		BudgetRecommendationTable::class  => true,
+		BudgetRecommendationQuery::class  => true,
+		MerchantIssueTable::class         => true,
+		MerchantIssueQuery::class         => true,
+		ProductFeedQueryHelper::class     => true,
+		ProductMetaQueryHelper::class     => true,
+		MigrationInterface::class         => true,
+		Migrator::class                   => true,
 	];
 
 	/**
@@ -76,6 +82,8 @@ class DBServiceProvider extends AbstractServiceProvider {
 	 * @return void
 	 */
 	public function register() {
+		$this->share_table_class( AttributeMappingRulesTable::class );
+		$this->add_query_class( AttributeMappingRulesQuery::class, AttributeMappingRulesTable::class );
 		$this->share_table_class( BudgetRecommendationTable::class );
 		$this->add_query_class( BudgetRecommendationQuery::class, BudgetRecommendationTable::class );
 		$this->share_table_class( ShippingRateTable::class );
@@ -90,6 +98,8 @@ class DBServiceProvider extends AbstractServiceProvider {
 
 		// Share DB migrations
 		$this->share_migration( MigrationVersion141::class, MerchantIssueTable::class );
+		$this->share_migration( Migration20211228T1640692399::class, ShippingRateTable::class, OptionsInterface::class );
+		$this->share_with_tags( Migration20220524T1653383133::class, BudgetRecommendationTable::class );
 		$this->share_with_tags( Migrator::class, MigrationInterface::class );
 	}
 

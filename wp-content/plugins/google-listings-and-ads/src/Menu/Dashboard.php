@@ -19,6 +19,8 @@ class Dashboard implements Service, Registerable, MerchantCenterAwareInterface {
 	use MerchantCenterAwareTrait;
 	use WooAdminNavigationTrait;
 
+	public const PATH = '/google/dashboard';
+
 	/**
 	 * Register a service.
 	 */
@@ -27,45 +29,23 @@ class Dashboard implements Service, Registerable, MerchantCenterAwareInterface {
 			return;
 		}
 
-		add_filter(
-			'woocommerce_marketing_menu_items',
-			function( $menu_items ) {
-				if ( $this->is_woo_nav_enabled() ) {
-					return $menu_items;
-				}
-
-				return $this->add_items( $menu_items );
-			}
-		);
-
 		add_action(
 			'admin_menu',
 			function() {
 				if ( $this->is_woo_nav_enabled() ) {
 					$this->register_navigation_pages();
 				} else {
-					$this->fix_menu_paths();
+					$this->register_classic_submenu_page(
+						[
+							'id'     => 'google-listings-and-ads',
+							'title'  => __( 'Google Listings & Ads', 'google-listings-and-ads' ),
+							'parent' => 'woocommerce-marketing',
+							'path'   => self::PATH,
+						]
+					);
 				}
 			}
 		);
-	}
-
-	/**
-	 * Add Google Menu item under Marketing, when WC Navigation is not enabled.
-	 *
-	 * @param array $items
-	 *
-	 * @return array
-	 */
-	protected function add_items( array $items ): array {
-		$items[] = [
-			'id'         => 'google-dashboard',
-			'title'      => __( 'Google Listings & Ads', 'google-listings-and-ads' ),
-			'path'       => '/google/dashboard',
-			'capability' => 'manage_woocommerce',
-		];
-
-		return $items;
 	}
 
 	/**
@@ -77,7 +57,7 @@ class Dashboard implements Service, Registerable, MerchantCenterAwareInterface {
 				'id'       => 'google-listings-and-ads-category',
 				'title'    => __( 'Google Listings & Ads', 'google-listings-and-ads' ),
 				'parent'   => 'woocommerce',
-				'path'     => '/google/dashboard',
+				'path'     => self::PATH,
 				'nav_args' => [
 					'title'        => __( 'Google Listings & Ads', 'google-listings-and-ads' ),
 					'is_category'  => true,
@@ -92,7 +72,7 @@ class Dashboard implements Service, Registerable, MerchantCenterAwareInterface {
 				'id'       => 'google-dashboard',
 				'title'    => __( 'Dashboard', 'google-listings-and-ads' ),
 				'parent'   => 'google-listings-and-ads-category',
-				'path'     => '/google/dashboard',
+				'path'     => self::PATH,
 				'nav_args' => [
 					'order'  => 10,
 					'parent' => 'google-listings-and-ads-category',

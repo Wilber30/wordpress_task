@@ -6,7 +6,7 @@ namespace Automattic\WooCommerce\GoogleListingsAndAds\Product;
 use Automattic\WooCommerce\GoogleListingsAndAds\Infrastructure\Service;
 use Automattic\WooCommerce\GoogleListingsAndAds\PluginHelper;
 use Automattic\WooCommerce\GoogleListingsAndAds\Value\ChannelVisibility;
-use Automattic\WooCommerce\GoogleListingsAndAds\Value\MCStatus;
+use Automattic\WooCommerce\GoogleListingsAndAds\Value\SyncStatus;
 use WC_Product;
 
 defined( 'ABSPATH' ) || exit;
@@ -81,12 +81,13 @@ class ProductRepository implements Service {
 	 * Find and return an array of WooCommerce product objects based on the provided product IDs.
 	 *
 	 * @param int[] $ids    Array of WooCommerce product IDs
+	 * @param array $args   Array of WooCommerce args (except 'return'), and product metadata.
 	 * @param int   $limit  Maximum number of results to retrieve or -1 for unlimited.
 	 * @param int   $offset Amount to offset product results.
 	 *
 	 * @return WC_Product[] Array of WooCommerce product objects
 	 */
-	public function find_by_ids( array $ids, int $limit = -1, int $offset = 0 ): array {
+	public function find_by_ids( array $ids, array $args = [], int $limit = -1, int $offset = 0 ): array {
 		$args['include'] = $ids;
 
 		return $this->find( $args, $limit, $offset );
@@ -148,22 +149,25 @@ class ProductRepository implements Service {
 	public function find_sync_ready_products( array $args = [], int $limit = - 1, int $offset = 0 ): FilteredProductList {
 		$results = $this->find( $this->get_sync_ready_products_query_args( $args ), $limit, $offset );
 
-		return $this->product_filter->filter_sync_ready_products( $results, false );
+		return $this->product_filter->filter_sync_ready_products( $results );
 	}
 
 	/**
-	 * Find and return an array of WooCommerce product IDs ready to be submitted to Google Merchant Center.
+	 * Find and return an array of WooCommerce product ID's ready to be deleted from the Google Merchant Center.
 	 *
-	 * @param array $args   Array of WooCommerce args (except 'return'), and product metadata.
+	 * @since 1.12.0
+	 *
+	 * @param int[] $ids    Array of WooCommerce product IDs
 	 * @param int   $limit  Maximum number of results to retrieve or -1 for unlimited.
 	 * @param int   $offset Amount to offset product results.
 	 *
-	 * @return FilteredProductList List of WooCommerce product IDs after filtering.
+	 * @return array
 	 */
-	public function find_sync_ready_product_ids( array $args = [], int $limit = - 1, int $offset = 0 ): FilteredProductList {
-		$results = $this->find( $this->get_sync_ready_products_query_args( $args ), $limit, $offset );
-
-		return $this->product_filter->filter_sync_ready_products( $results, true );
+	public function find_delete_product_ids( array $ids, int $limit = - 1, int $offset = 0 ): array {
+		// Default status query args in WC_Product_Query plus status trash.
+		$args    = [ 'status' => [ 'draft', 'pending', 'private', 'publish', 'trash' ] ];
+		$results = $this->find_by_ids( $ids, $args, $limit, $offset );
+		return $this->product_filter->filter_products_for_delete( $results )->get_product_ids();
 	}
 
 	/**
@@ -263,9 +267,14 @@ class ProductRepository implements Service {
 			'type'       => $types,
 			'meta_query' => [
 				[
-					'key'     => ProductMetaHandler::KEY_MC_STATUS,
+					'key'     => ProductMetaHandler::KEY_SYNC_STATUS,
+					'compare' => '!=',
+					'value'   => SyncStatus::SYNCED,
+				],
+				[
+					'key'     => ProductMetaHandler::KEY_VISIBILITY,
 					'compare' => '=',
-					'value'   => MCStatus::NOT_SYNCED,
+					'value'   => ChannelVisibility::SYNC_AND_SHOW,
 				],
 			],
 		];

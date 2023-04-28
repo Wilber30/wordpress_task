@@ -6,18 +6,19 @@ namespace Automattic\WooCommerce\GoogleListingsAndAds\API\Google;
 use Automattic\WooCommerce\GoogleListingsAndAds\Exception\MerchantApiException;
 use Automattic\WooCommerce\GoogleListingsAndAds\Options\OptionsAwareInterface;
 use Automattic\WooCommerce\GoogleListingsAndAds\Options\OptionsAwareTrait;
-use Google\Exception as GoogleException;
-use Google\Service\Exception as GoogleServiceException;
-use Google\Service\ShoppingContent;
-use Google\Service\ShoppingContent\Account;
-use Google\Service\ShoppingContent\AccountAdsLink;
-use Google\Service\ShoppingContent\AccountStatus;
-use Google\Service\ShoppingContent\ProductstatusesCustomBatchResponse;
-use Google\Service\ShoppingContent\ProductstatusesCustomBatchRequest;
-use Google\Service\ShoppingContent\Product;
+use Automattic\WooCommerce\GoogleListingsAndAds\Options\OptionsInterface;
+use Automattic\WooCommerce\GoogleListingsAndAds\Vendor\Google\Exception as GoogleException;
+use Automattic\WooCommerce\GoogleListingsAndAds\Vendor\Google\Service\Exception as GoogleServiceException;
+use Automattic\WooCommerce\GoogleListingsAndAds\Vendor\Google\Service\ShoppingContent;
+use Automattic\WooCommerce\GoogleListingsAndAds\Vendor\Google\Service\ShoppingContent\Account;
+use Automattic\WooCommerce\GoogleListingsAndAds\Vendor\Google\Service\ShoppingContent\AccountAdsLink;
+use Automattic\WooCommerce\GoogleListingsAndAds\Vendor\Google\Service\ShoppingContent\AccountStatus;
+use Automattic\WooCommerce\GoogleListingsAndAds\Vendor\Google\Service\ShoppingContent\ProductstatusesCustomBatchResponse;
+use Automattic\WooCommerce\GoogleListingsAndAds\Vendor\Google\Service\ShoppingContent\ProductstatusesCustomBatchRequest;
+use Automattic\WooCommerce\GoogleListingsAndAds\Vendor\Google\Service\ShoppingContent\Product;
+use Automattic\WooCommerce\GoogleListingsAndAds\Vendor\Google\Service\ShoppingContent\RequestPhoneVerificationRequest;
+use Automattic\WooCommerce\GoogleListingsAndAds\Vendor\Google\Service\ShoppingContent\VerifyPhoneNumberRequest;
 use Exception;
-use Google\Service\ShoppingContent\RequestPhoneVerificationRequest;
-use Google\Service\ShoppingContent\VerifyPhoneNumberRequest;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -193,6 +194,34 @@ class Merchant implements OptionsAwareInterface {
 	}
 
 	/**
+	 * Get hash of the site URL we used during onboarding.
+	 * If not available in a local option, it's fetched from the Merchant Center account.
+	 *
+	 * @since 1.13.0
+	 * @return string|null
+	 */
+	public function get_claimed_url_hash(): ?string {
+		$claimed_url_hash = $this->options->get( OptionsInterface::CLAIMED_URL_HASH );
+
+		if ( empty( $claimed_url_hash ) && $this->options->get_merchant_id() ) {
+			try {
+				$account_url = $this->get_account()->getWebsiteUrl();
+
+				if ( empty( $account_url ) || ! $this->get_accountstatus()->getWebsiteClaimed() ) {
+					return null;
+				}
+
+				$claimed_url_hash = md5( untrailingslashit( $account_url ) );
+				$this->options->update( OptionsInterface::CLAIMED_URL_HASH, $claimed_url_hash );
+			} catch ( Exception $e ) {
+				return null;
+			}
+		}
+
+		return $claimed_url_hash;
+	}
+
+	/**
 	 * Retrieve the user's Merchant Center account information.
 	 *
 	 * @param int $id Optional - the Merchant Center account to retrieve
@@ -307,5 +336,16 @@ class Merchant implements OptionsAwareInterface {
 		}
 
 		return false;
+	}
+
+	/**
+	 * Update the Merchant Center ID to use for requests.
+	 *
+	 * @param int $id  Merchant ID number.
+	 *
+	 * @return bool
+	 */
+	public function update_merchant_id( int $id ): bool {
+		return $this->options->update( OptionsInterface::MERCHANT_ID, $id );
 	}
 }

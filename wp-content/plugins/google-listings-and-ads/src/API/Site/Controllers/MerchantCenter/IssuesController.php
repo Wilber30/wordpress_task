@@ -43,13 +43,6 @@ class IssuesController extends BaseOptionsController {
 		parent::__construct( $server );
 		$this->merchant_statuses = $merchant_statuses;
 		$this->product_helper    = $product_helper;
-
-		add_filter(
-			'woocommerce_gla_merchant_issue_override',
-			function( $issue ) {
-				return $this->maybe_override_issue_values( $issue );
-			}
-		);
 	}
 
 	/**
@@ -85,7 +78,7 @@ class IssuesController extends BaseOptionsController {
 				$results         = $this->merchant_statuses->get_issues( $type_filter, $per_page, $page );
 				$results['page'] = $page;
 			} catch ( Exception $e ) {
-				return new Response( [ 'message' => $e->getMessage() ], $e->getCode() ?: 400 );
+				return $this->response_from_exception( $e );
 			}
 
 			// Replace variation IDs with parent ID (for Edit links).
@@ -227,25 +220,5 @@ class IssuesController extends BaseOptionsController {
 	 */
 	protected function get_schema_title(): string {
 		return 'merchant_issues';
-	}
-
-
-	/**
-	 * In very rare instances, issue values need to be overridden manually.
-	 *
-	 * @param array $issue
-	 *
-	 * @return array The original issue with any possibly overridden values.
-	 */
-	protected function maybe_override_issue_values( array $issue ): array {
-		$is_account_issue = MerchantStatuses::TYPE_ACCOUNT === $issue['type'];
-		if ( $is_account_issue && "Account isn't eligible for enhanced free listings" === $issue['issue'] ) {
-			$issue['issue']      = 'Show products on additional surfaces across Google through enhanced free listings';
-			$issue['severity']   = MerchantStatuses::SEVERITY_WARNING;
-			$issue['action']     = 'Read about enhanced free listings';
-			$issue['action_url'] = 'https://support.google.com/merchants/answer/9199328?hl=en';
-		}
-
-		return $issue;
 	}
 }

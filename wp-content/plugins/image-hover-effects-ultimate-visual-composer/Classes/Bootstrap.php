@@ -48,37 +48,6 @@ class Bootstrap {
 
     const ADMINMENU = 'get_oxilab_addons_menu';
 
-    public static function instance() {
-        if (self::$instance == null) {
-            self::$instance = new self;
-        }
-
-        return self::$instance;
-    }
-
-    public function __construct() {
-        do_action('oxi-flip-box-plugin/before_init');
-        // Load translation
-        add_action('init', array($this, 'i18n'));
-        $this->Shortcode_loader();
-        $this->Public_loader();
-        if (is_admin()) {
-            $this->Admin_Filters();
-            $this->User_Admin();
-            $this->User_Reviews();
-        }
-    }
-
-    /**
-     * Load Textdomain
-     *
-     * @since 3.1.0
-     * @access public
-     */
-    public function i18n() {
-        load_plugin_textdomain('oxi-flip-box-plugin');
-    }
-
     /**
      * Shortcode loader
      *
@@ -116,7 +85,6 @@ class Bootstrap {
     }
 
     public function Admin_Filters() {
-        // echo $this->fixed_data('6f78692d666c69702d626f782d737570706f72742d616e642d636f6d6d656e7473');
         add_filter($this->fixed_data('6f78692d666c69702d626f782d737570706f72742d616e642d636f6d6d656e7473'), array($this, $this->fixed_data('537570706f7274416e64436f6d6d656e7473')));
         add_filter($this->fixed_data('6f78692d666c69702d626f782d706c7567696e2f70726f5f76657273696f6e'), array($this, $this->fixed_data('636865636b5f63757272656e745f74616273')));
         add_filter($this->fixed_data('6f78692d666c69702d626f782d706c7567696e2f61646d696e5f6d656e75'), array($this, $this->fixed_data('6f78696c61625f61646d696e5f6d656e75')));
@@ -129,6 +97,37 @@ class Bootstrap {
         add_action('wp_ajax_oxi_flip_box_data', array($this, 'data_process'));
         add_action('admin_init', array($this, 'redirect_on_activation'));
         add_action('admin_head', [$this, 'welcome_remove_menus']);
+    }
+
+    public static function instance() {
+        if (self::$instance == null) {
+            self::$instance = new self;
+        }
+
+        return self::$instance;
+    }
+
+    public function __construct() {
+        do_action('oxi-flip-box-plugin/before_init');
+        // Load translation
+        add_action('init', array($this, 'i18n'));
+        $this->Shortcode_loader();
+        $this->Public_loader();
+        if (is_admin()) {
+            $this->Admin_Filters();
+            $this->User_Admin();
+            $this->User_Reviews();
+        }
+    }
+
+    /**
+     * Load Textdomain
+     *
+     * @since 3.1.0
+     * @access public
+     */
+    public function i18n() {
+        load_plugin_textdomain('oxi-flip-box-plugin');
     }
 
 }

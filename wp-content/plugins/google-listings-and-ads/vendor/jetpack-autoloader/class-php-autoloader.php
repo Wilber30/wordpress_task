@@ -5,7 +5,7 @@
  * @package automattic/jetpack-autoloader
  */
 
-namespace Automattic\Jetpack\Autoloader\jpd71dc43d79da58317d8368cf1da66e70;
+namespace Automattic\Jetpack\Autoloader\jp980c77f15aee1f341b5bc8447076c0fc;
 
  // phpcs:ignore
 
@@ -37,6 +37,9 @@ class PHP_Autoloader {
 	public function unregister_autoloader() {
 		// Remove any v2 autoloader that we've already registered.
 		$autoload_chain = spl_autoload_functions();
+		if ( ! $autoload_chain ) {
+			return;
+		}
 		foreach ( $autoload_chain as $autoloader ) {
 			// We can identify a v2 autoloader using the namespace.
 			$namespace_check = null;

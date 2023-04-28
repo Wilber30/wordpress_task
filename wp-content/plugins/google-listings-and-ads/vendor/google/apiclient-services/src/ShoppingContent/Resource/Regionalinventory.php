@@ -15,11 +15,11 @@
  * the License.
  */
 
-namespace Google\Service\ShoppingContent\Resource;
+namespace Automattic\WooCommerce\GoogleListingsAndAds\Vendor\Google\Service\ShoppingContent\Resource;
 
-use Google\Service\ShoppingContent\RegionalInventory as RegionalInventoryModel;
-use Google\Service\ShoppingContent\RegionalinventoryCustomBatchRequest;
-use Google\Service\ShoppingContent\RegionalinventoryCustomBatchResponse;
+use Automattic\WooCommerce\GoogleListingsAndAds\Vendor\Google\Service\ShoppingContent\RegionalInventory as RegionalInventoryModel;
+use Automattic\WooCommerce\GoogleListingsAndAds\Vendor\Google\Service\ShoppingContent\RegionalinventoryCustomBatchRequest;
+use Automattic\WooCommerce\GoogleListingsAndAds\Vendor\Google\Service\ShoppingContent\RegionalinventoryCustomBatchResponse;
 
 /**
  * The "regionalinventory" collection of methods.
@@ -29,7 +29,7 @@ use Google\Service\ShoppingContent\RegionalinventoryCustomBatchResponse;
  *   $regionalinventory = $contentService->regionalinventory;
  *  </code>
  */
-class Regionalinventory extends \Google\Service\Resource
+class Regionalinventory extends \Automattic\WooCommerce\GoogleListingsAndAds\Vendor\Google\Service\Resource
 {
   /**
    * Updates regional inventory for multiple products or regions in a single
@@ -46,7 +46,7 @@ class Regionalinventory extends \Google\Service\Resource
     return $this->call('custombatch', [$params], RegionalinventoryCustomBatchResponse::class);
   }
   /**
-   * Update the regional inventory of a product in your Merchant Center account.
+   * Updates the regional inventory of a product in your Merchant Center account.
    * If a regional inventory with the same region ID already exists, this method
    * updates that entry. (regionalinventory.insert)
    *

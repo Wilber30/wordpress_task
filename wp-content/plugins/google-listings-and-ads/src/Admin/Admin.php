@@ -19,16 +19,19 @@ use Automattic\WooCommerce\GoogleListingsAndAds\MerchantCenter\MerchantCenterSer
 use Automattic\WooCommerce\GoogleListingsAndAds\PluginHelper;
 use Automattic\WooCommerce\GoogleListingsAndAds\Value\BuiltScriptDependencyArray;
 use Automattic\WooCommerce\GoogleListingsAndAds\View\ViewException;
-
+use Automattic\WooCommerce\GoogleListingsAndAds\Options\OptionsAwareInterface;
+use Automattic\WooCommerce\GoogleListingsAndAds\Options\OptionsAwareTrait;
+use Automattic\WooCommerce\GoogleListingsAndAds\Options\OptionsInterface;
 /**
  * Class Admin
  *
  * @package Automattic\WooCommerce\GoogleListingsAndAds\Pages
  */
-class Admin implements Service, Registerable, Conditional {
+class Admin implements Service, Registerable, Conditional, OptionsAwareInterface {
 
 	use AdminConditional;
 	use PluginHelper;
+	use OptionsAwareTrait;
 
 	/**
 	 * @var AssetsHandlerInterface
@@ -74,6 +77,11 @@ class Admin implements Service, Registerable, Conditional {
 		add_action(
 			'admin_enqueue_scripts',
 			function() {
+				if ( wc_admin_is_registered_page() ) {
+					// Enqueue the required JavaScript scripts and CSS styles of the Media library.
+					wp_enqueue_media();
+				}
+
 				$this->assets_handler->enqueue_many( $this->get_assets() );
 			}
 		);
@@ -83,6 +91,14 @@ class Admin implements Service, Registerable, Conditional {
 			function( $links ) {
 				return $this->add_plugin_links( $links );
 			}
+		);
+
+		add_action(
+			'wp_default_scripts',
+			function( $scripts ) {
+				$this->inject_fast_refresh_for_dev( $scripts );
+			},
+			20
 		);
 	}
 
@@ -110,13 +126,16 @@ class Admin implements Service, Registerable, Conditional {
 		) )->add_inline_script(
 			'glaData',
 			[
-				'mcSetupComplete'     => $this->merchant_center->is_setup_complete(),
-				'mcSupportedCountry'  => $this->merchant_center->is_store_country_supported(),
-				'mcSupportedLanguage' => $this->merchant_center->is_language_supported(),
-				'adsSetupComplete'    => $this->ads->is_setup_complete(),
-				'enableReports'       => $this->enableReports(),
-				'dateFormat'          => get_option( 'date_format' ),
-				'timeFormat'          => get_option( 'time_format' ),
+				'mcSetupComplete'          => $this->merchant_center->is_setup_complete(),
+				'mcSupportedCountry'       => $this->merchant_center->is_store_country_supported(),
+				'mcSupportedLanguage'      => $this->merchant_center->is_language_supported(),
+				'adsCampaignConvertStatus' => $this->options->get( OptionsInterface::CAMPAIGN_CONVERT_STATUS ),
+				'adsSetupComplete'         => $this->ads->is_setup_complete(),
+				'enableReports'            => $this->enableReports(),
+				'dateFormat'               => get_option( 'date_format' ),
+				'timeFormat'               => get_option( 'time_format' ),
+				'siteLogoUrl'              => wp_get_attachment_image_url( get_theme_mod( 'custom_logo' ), 'full' ),
+
 			]
 		);
 
@@ -229,5 +248,63 @@ class Admin implements Service, Registerable, Conditional {
 	 */
 	protected function enableReports(): bool {
 		return apply_filters( 'woocommerce_gla_enable_reports', true );
+	}
+
+	/**
+	 * This method is ONLY used during development.
+	 *
+	 * The runtime.js file is created when the front-end is developed in Fast Refresh mode
+	 * and must be loaded together to enable the mode.
+	 *
+	 * When Gutenberg is not installed or not activated, the react dependency will not have
+	 * the 'wp-react-refresh-entry' handle, so here injects the Fast Refresh scripts we built.
+	 *
+	 * The Fast Refresh also needs the development version of React and ReactDOM.
+	 * They will be replaced if the SCRIPT_DEBUG flag is not enabled.
+	 *
+	 * @param WP_Scripts $scripts WP_Scripts instance.
+	 */
+	private function inject_fast_refresh_for_dev( $scripts ) {
+		$runtime_path = "{$this->get_root_dir()}/js/build/runtime.js";
+
+		if ( ! file_exists( $runtime_path ) ) {
+			return;
+		}
+
+		$react_script = $scripts->query( 'react', 'registered' );
+
+		if ( ! $react_script ) {
+			return;
+		}
+
+		if ( ! ( defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ) ) {
+			$react_dom_script      = $scripts->query( 'react-dom', 'registered' );
+			$react_dom_script->src = str_replace( '.min', '', $react_dom_script->src );
+			$react_script->src     = str_replace( '.min', '', $react_script->src );
+		}
+
+		$plugin_url = $this->get_plugin_url();
+
+		$scripts->add(
+			'gla-webpack-rumtime',
+			"{$plugin_url}/js/build/runtime.js",
+			[],
+			(string) filemtime( $runtime_path )
+		);
+		$react_script->deps[] = 'gla-webpack-rumtime';
+
+		if ( ! in_array( 'wp-react-refresh-entry', $react_script->deps, true ) ) {
+			$scripts->add(
+				'wp-react-refresh-runtime',
+				"{$plugin_url}/js/build-dev/react-refresh-runtime.js",
+				[]
+			);
+			$scripts->add(
+				'wp-react-refresh-entry',
+				"{$plugin_url}/js/build-dev/react-refresh-entry.js",
+				[ 'wp-react-refresh-runtime' ]
+			);
+			$react_script->deps[] = 'wp-react-refresh-entry';
+		}
 	}
 }

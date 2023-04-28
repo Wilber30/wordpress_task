@@ -3,6 +3,7 @@ declare( strict_types=1 );
 
 namespace Automattic\WooCommerce\GoogleListingsAndAds\Proxies;
 
+use Automattic\WooCommerce\Container;
 use Automattic\WooCommerce\GoogleListingsAndAds\Exception\InvalidValue;
 use WC_Countries;
 use WC_Coupon;
@@ -37,15 +38,22 @@ class WC {
 	protected $wc_countries;
 
 	/**
+	 * @var array
+	 */
+	protected $continents;
+
+	/**
 	 * WC constructor.
 	 *
 	 * @param WC_Countries|null $countries
 	 */
 	public function __construct( ?WC_Countries $countries = null ) {
-		$countries          = $countries ?? new WC_Countries();
-		$this->wc_countries = $countries;
-		$this->base_country = $countries->get_base_country() ?? 'US';
-		$this->countries    = $countries->get_countries() ?? [];
+		$countries               = $countries ?? new WC_Countries();
+		$this->wc_countries      = $countries;
+		$this->base_country      = $countries->get_base_country() ?? 'US';
+		$this->countries         = $countries->get_countries() ?? [];
+		$this->allowed_countries = $countries->get_allowed_countries() ?? [];
+		$this->continents        = $countries->get_continents() ?? [];
 	}
 
 	/**
@@ -58,12 +66,30 @@ class WC {
 	}
 
 	/**
+	 * Get WooCommerce allowed countries.
+	 *
+	 * @return array
+	 */
+	public function get_allowed_countries(): array {
+		return $this->allowed_countries;
+	}
+
+	/**
 	 * Get the base country for the store.
 	 *
 	 * @return string
 	 */
 	public function get_base_country(): string {
 		return $this->base_country;
+	}
+
+	/**
+	 * Get all continents.
+	 *
+	 * @return array
+	 */
+	public function get_continents(): array {
+		return $this->continents;
 	}
 
 	/**
@@ -168,5 +194,23 @@ class WC {
 	 */
 	public function get_woocommerce_currency(): string {
 		return get_woocommerce_currency();
+	}
+
+	/**
+	 * Get available payment gateways.
+	 */
+	public function get_available_payment_gateways(): array {
+		return WCCore()->payment_gateways->get_available_payment_gateways();
+	}
+
+	/**
+	 * Returns the WooCommerce object container.
+	 *
+	 * @return Container
+	 *
+	 * @since 2.3.10
+	 */
+	public function wc_get_container(): Container {
+		return wc_get_container();
 	}
 }

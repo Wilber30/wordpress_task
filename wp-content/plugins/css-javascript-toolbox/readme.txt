@@ -7,15 +7,15 @@ License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/old-licenses/gpl-2.0.html
 Requires at least: 4.9 or higher
 Requires PHP: 7 or higher
-Tested up to: 5.8.2
-Stable tag: 11.5
+Tested up to: 6.1.1
+Stable tag: 11.6
 
 Add code snippets (CSS, JavaScript, HTML, PHP) to your site and choose where it goes. Feel confident with 10 years of security & reliability.
 
 == Description ==
-Thank you for taking a look at our code snippet plugin. I believe it will do exactly what you are wanting. 
+Thank you for taking a look at our code snippet plugin. I believe it will do exactly what you are wanting.
 
-### IDEAL FOR: ### 
+### IDEAL FOR: ###
 * **Front-end modifications** (without modifying theme files)
 * **Adding functionality** (without modifying functions.php)
 * **Adding widgets, code snippets/scripts** (e.g. Google Analytics)
@@ -24,6 +24,8 @@ Thank you for taking a look at our code snippet plugin. I believe it will do exa
 CJT is built on the concept of a code block. Each code block contains its own editor for writing/adding your snippets; and an assignment panel so you can click the sections of your website you want the code to go.
 
 It was designed for super-fast development without any cumbersome page refreshing. That means you can add as many code blocks as you need and see all of your code and assignments in one dashboard. Don't worry, it has been optimised to handle 100's of code blocks and thousands of assignments (i.e. Pages, Posts, Categories, Custom Posts, etc).
+
+[Click for CSS & JavaScript Toolbox PLUS and SAVE 75%](https://css-javascript-toolbox.com/?utm_source=cjt_free_on_wordpress&utm_medium=readme_txt_description&utm_campaign=click_for_premium_link)
 
 ### FEATURES: ###
 * Easy to use 'code blocks' interface
@@ -40,7 +42,7 @@ It was designed for super-fast development without any cumbersome page refreshin
 * **PREMIUM** Code revisions system
 * **PREMIUM** Backup and export/import system
 
-[Save 75% for our PREMIUM CSS & JavaScript Toolbox PLUS](https://css-javascript-toolbox.com/?utm_source=cjt_free_on_wordpress&utm_medium=readme_txt_description&utm_campaign=click_for_premium_link)
+[Click for CSS & JavaScript Toolbox PLUS and SAVE 75%](https://css-javascript-toolbox.com/?utm_source=cjt_free_on_wordpress&utm_medium=readme_txt_description&utm_campaign=click_for_premium_link)
 
 ### OVERVIEW VIDEO ###
 https://www.youtube.com/watch?v=vYAKePVgJqE
@@ -120,6 +122,10 @@ The hook location feature gives you further control over the outputting of your 
 Due to the overwhelming amount of emails we get for users requesting support for our CJT plugins, we cannot provide support for the CJT Free plugin (hosted here on WordPress.org) at this stage unfortunately. If you wish to receive priority support, please visit our CJT website and then [purchase a license for any of our premium CJT PLUS products](https://css-javascript-toolbox.com/pricing).
 
 == Changelog ==
+= 11.6 =
+* Enhancement: Updated ACE Editor to v1.15.0
+* Fix: Bugs fixed
+
 = 11.5 =
 * Compatibility: PHP version 8+
 * Compatibility: MySQL version 8+

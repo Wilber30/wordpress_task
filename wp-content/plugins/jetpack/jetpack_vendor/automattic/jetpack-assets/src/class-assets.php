@@ -92,7 +92,8 @@ class Assets {
 		}
 
 		if ( in_array( $handle, $this->defer_script_handles, true ) ) {
-			return preg_replace( '/^<script /i', '<script defer ', $tag );
+			// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript
+			return preg_replace( '/<script( [^>]*)? src=/i', '<script defer$1 src=', $tag );
 		}
 
 		return $tag;
@@ -277,7 +278,7 @@ class Assets {
 			} elseif ( '..' === $pp[ $i ] ) {
 				array_splice( $pp, --$i, 2 );
 			} else {
-				$i++;
+				++$i;
 			}
 		}
 		$ret .= join( '/', $pp );
@@ -358,7 +359,7 @@ class Assets {
 		}
 
 		if ( $options['asset_path'] && file_exists( "$dir/{$options['asset_path']}" ) ) {
-			$asset                       = require "$dir/{$options['asset_path']}";
+			$asset                       = require "$dir/{$options['asset_path']}"; // phpcs:ignore WordPressVIPMinimum.Files.IncludingFile.NotAbsolutePath
 			$options['dependencies']     = array_merge( $asset['dependencies'], $options['dependencies'] );
 			$options['css_dependencies'] = array_merge(
 				array_filter(

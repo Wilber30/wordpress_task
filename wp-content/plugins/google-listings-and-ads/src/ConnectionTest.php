@@ -10,10 +10,11 @@
 namespace Automattic\WooCommerce\GoogleListingsAndAds;
 
 use Automattic\Jetpack\Connection\Manager;
+use Automattic\WooCommerce\GoogleListingsAndAds\API\Google\Ads;
 use Automattic\WooCommerce\GoogleListingsAndAds\API\Google\AdsCampaign;
 use Automattic\WooCommerce\GoogleListingsAndAds\API\Google\Connection;
 use Automattic\WooCommerce\GoogleListingsAndAds\API\Google\Merchant;
-use Automattic\WooCommerce\GoogleListingsAndAds\API\Google\Proxy;
+use Automattic\WooCommerce\GoogleListingsAndAds\API\Google\Middleware;
 use Automattic\WooCommerce\GoogleListingsAndAds\Infrastructure\Registerable;
 use Automattic\WooCommerce\GoogleListingsAndAds\Infrastructure\Service;
 use Automattic\WooCommerce\GoogleListingsAndAds\Jobs\CleanupProductsJob;
@@ -397,22 +398,6 @@ class ConnectionTest implements Service, Registerable {
 					<p class="description">For single-step development testing, not used for normal account setup flow.</p>
 				<table class="form-table" role="presentation">
 					<tr>
-						<th>Perform Verification:</th>
-						<td>
-							<p>
-								<a class="button" href="<?php echo esc_url( wp_nonce_url( add_query_arg( [ 'action' => 'wcs-google-sv-token' ], $url ), 'wcs-google-sv-token' ) ); ?>">Perform Site Verification</a>
-							</p>
-						</td>
-					</tr>
-					<tr>
-						<th>Check Verification:</th>
-						<td>
-							<p>
-								<a class="button" href="<?php echo esc_url( wp_nonce_url( add_query_arg( [ 'action' => 'wcs-google-sv-check' ], $url ), 'wcs-google-sv-check' ) ); ?>">Check Site Verification</a>
-							</p>
-						</td>
-					</tr>
-					<tr>
 						<th>Link Site to MCA:</th>
 						<td>
 							<p>
@@ -639,6 +624,29 @@ class ConnectionTest implements Service, Registerable {
 					<input name="action" value="wcs-cleanup-products" type="hidden" />
 				</form>
 			<?php } ?>
+
+			<?php if ( ! empty( $_GET['e2e'] ) ) { ?>
+				<h2 class="title">E2E testing</h2>
+
+				<table class="form-table" role="presentation">
+					<tr>
+						<th>Save test conversion ID:</th>
+						<td>
+							<p>
+								<a class="button" id="e2e-test-conversion-id" href="<?php echo esc_url( wp_nonce_url( add_query_arg( [ 'action' => 'e2e-test-conversion-id' ], $url ), 'e2e-test-conversion-id' ) ); ?>">Save</a>
+							</p>
+						</td>
+					</tr>
+					<tr>
+						<th>Clear conversion ID:</th>
+						<td>
+							<p>
+								<a class="button" id="e2e-clear-conversion-id" href="<?php echo esc_url( wp_nonce_url( add_query_arg( [ 'action' => 'e2e-clear-conversion-id' ], $url ), 'e2e-clear-conversion-id' ) ); ?>">Clear</a>
+							</p>
+						</td>
+					</tr>
+				</table>
+			<?php } ?>
 		</div>
 		<?php
 	}
@@ -655,8 +663,6 @@ class ConnectionTest implements Service, Registerable {
 		$manager = $this->container->get( Manager::class );
 
 		if ( 'connect' === $_GET['action'] && check_admin_referer( 'connect' ) ) {
-			$manager->enable_plugin(); // Mark the plugin connection as enabled, in case it was disabled earlier.
-
 			// Register the site to wp.com.
 			if ( ! $manager->is_connected() ) {
 				$result = $manager->register();
@@ -684,9 +690,19 @@ class ConnectionTest implements Service, Registerable {
 		if ( 'disconnect' === $_GET['action'] && check_admin_referer( 'disconnect' ) ) {
 			$manager->remove_connection();
 
-			$redirect = admin_url( 'admin.php?page=connection-test-admin-page' );
-			wp_safe_redirect( $redirect );
-			exit;
+			$plugin = $manager->get_plugin();
+
+			if ( $plugin && ! $plugin->is_only() ) {
+				$connected_plugins = $manager->get_connected_plugins();
+				$this->response    = 'Cannot disconnect Jetpack connection as there are other plugins using it: ';
+				$this->response   .= implode( ', ', array_keys( $connected_plugins ) ) . "\n";
+				$this->response   .= 'Please disconnect the connection using My Jetpack.';
+				return;
+			} else {
+				$redirect = admin_url( 'admin.php?page=connection-test-admin-page' );
+				wp_safe_redirect( $redirect );
+				exit;
+			}
 		}
 
 		if ( 'wcs-test' === $_GET['action'] && check_admin_referer( 'wcs-test' ) ) {
@@ -790,21 +806,9 @@ class ConnectionTest implements Service, Registerable {
 			$this->response .= $response;
 		}
 
-		if ( 'wcs-google-sv-token' === $_GET['action'] && check_admin_referer( 'wcs-google-sv-token' ) ) {
-			$request = new Request( 'POST', '/wc/gla/site/verify' );
-			$this->send_rest_request( $request );
-		}
-
-		if ( 'wcs-google-sv-check' === $_GET['action'] && check_admin_referer( 'wcs-google-sv-check' ) ) {
-			$request = new Request( 'GET', '/wc/gla/site/verify' );
-			$this->send_rest_request( $request );
-		}
-
 		if ( 'wcs-google-sv-link' === $_GET['action'] && check_admin_referer( 'wcs-google-sv-link' ) ) {
 			try {
-				/** @var Proxy $proxy */
-				$proxy = $this->container->get( Proxy::class );
-				if ( $proxy->link_merchant_to_mca() ) {
+				if ( $this->container->get( Middleware::class )->link_merchant_to_mca() ) {
 					$this->response .= "Linked merchant to MCA\n";
 				}
 			} catch ( \Exception $e ) {
@@ -896,9 +900,7 @@ class ConnectionTest implements Service, Registerable {
 			try {
 				$this->response = 'Proxied request > get merchant ID' . "\n";
 
-				/** @var Proxy $proxy */
-				$proxy = $this->container->get( Proxy::class );
-				foreach ( $proxy->get_merchant_accounts() as $account ) {
+				foreach ( $this->container->get( Middleware::class )->get_merchant_accounts() as $account ) {
 					$this->response     .= sprintf(
 						"Merchant ID: %s%s\n",
 						$account['id'],
@@ -936,14 +938,12 @@ class ConnectionTest implements Service, Registerable {
 
 		if ( 'wcs-ads-customers-lib' === $_GET['action'] && check_admin_referer( 'wcs-ads-customers-lib' ) ) {
 			try {
-				/** @var Proxy $proxy */
-				$proxy    = $this->container->get( Proxy::class );
-				$accounts = $proxy->get_ads_account_ids();
+				$accounts = $this->container->get( Ads::class )->get_ads_accounts();
 
 				$this->response .= 'Total accounts: ' . count( $accounts ) . "\n";
-				foreach ( $accounts as $id ) {
-					$this->response     .= sprintf( "Ads ID: %d\n", $id );
-					$_GET['customer_id'] = $id;
+				foreach ( $accounts as $account ) {
+					$this->response     .= sprintf( "%d : %s\n", $account['id'], $account['name'] );
+					$_GET['customer_id'] = $account['id'];
 				}
 			} catch ( \Exception $e ) {
 				$this->response .= 'Error: ' . $e->getMessage();
@@ -974,9 +974,7 @@ class ConnectionTest implements Service, Registerable {
 		}
 
 		if ( 'wcs-accept-tos' === $_GET['action'] && check_admin_referer( 'wcs-accept-tos' ) ) {
-			/** @var Proxy $proxy */
-			$proxy  = $this->container->get( Proxy::class );
-			$result = $proxy->mark_tos_accepted( 'google-mc', 'john.doe@example.com' );
+			$result = $this->container->get( Middleware::class )->mark_tos_accepted( 'google-mc', 'john.doe@example.com' );
 
 			$this->response .= sprintf(
 				'Attempting to accept Tos. Successful? %s<br>Response body: %s',
@@ -986,9 +984,7 @@ class ConnectionTest implements Service, Registerable {
 		}
 
 		if ( 'wcs-check-tos' === $_GET['action'] && check_admin_referer( 'wcs-check-tos' ) ) {
-			/** @var Proxy $proxy */
-			$proxy    = $this->container->get( Proxy::class );
-			$accepted = $proxy->check_tos_accepted( 'google-mc' );
+			$accepted = $this->container->get( Middleware::class )->check_tos_accepted( 'google-mc' );
 
 			$this->response .= sprintf(
 				'Tos Accepted? %s<br>Response body: %s',
@@ -1131,6 +1127,26 @@ class ConnectionTest implements Service, Registerable {
 				$delete_job->schedule();
 				$this->response = 'Successfully scheduled a job to cleanup all products!';
 			}
+		}
+
+		if ( 'e2e-test-conversion-id' === $_GET['action'] && check_admin_referer( 'e2e-test-conversion-id' ) ) {
+			/** @var OptionsInterface $options */
+			$options = $this->container->get( OptionsInterface::class );
+			$options->update(
+				OptionsInterface::ADS_CONVERSION_ACTION,
+				[
+					'conversion_id'    => 'AW-123456',
+					'conversion_label' => 'aB_cdEFgh',
+				]
+			);
+			$this->response .= 'Saved test conversion ID.';
+		}
+
+		if ( 'e2e-clear-conversion-id' === $_GET['action'] && check_admin_referer( 'e2e-clear-conversion-id' ) ) {
+			/** @var OptionsInterface $options */
+			$options = $this->container->get( OptionsInterface::class );
+			$options->delete( OptionsInterface::ADS_CONVERSION_ACTION );
+			$this->response .= 'Cleared conversion ID.';
 		}
 	}
 

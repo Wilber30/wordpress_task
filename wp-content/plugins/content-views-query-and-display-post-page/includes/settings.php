@@ -696,8 +696,9 @@ if ( !class_exists( 'PT_CV_Settings' ) ) {
 						),
 					),
 				),
+				!get_option( 'pt_cv_version_pro' ) ? PT_CV_Settings::get_cvpro( __( 'Show images in same size, set a custom size, overlay image with text, lazyload images', 'content-views-query-and-display-post-page' ) ) : '',
 				// Upgrade to Pro: Show image/video in content as thumbnail
-				!get_option( 'pt_cv_version_pro' ) ? PT_CV_Settings::get_cvpro( sprintf( __( 'In this lite version, thumbnail is only shown if the post has %s.<br>In the Pro version, you can show the first image in post as thumbnail, without having to set a featured image', 'content-views-query-and-display-post-page' ), sprintf( '<a target="_blank" href="https://codex.wordpress.org/Post_Thumbnails">%s</a>', __( 'Featured Image' ) ) ), 12, null, true ) : '',
+				!get_option( 'pt_cv_version_pro' ) ? PT_CV_Settings::get_cvpro( sprintf( __( 'In this lite version, thumbnail is only shown if the post has %s.<br>In the Pro version, you can show the first image/video in post as thumbnail, without having to set a featured image', 'content-views-query-and-display-post-page' ), sprintf( '<a target="_blank" href="https://codex.wordpress.org/Post_Thumbnails">%s</a>', __( 'Featured Image' ) ) ), 12, null, true ) : '',
 			);
 
 			$result = apply_filters( PT_CV_PREFIX_ . 'field_thumbnail_settings', $result, $prefix );
@@ -870,7 +871,7 @@ if ( !class_exists( 'PT_CV_Settings' ) ) {
 			$prefix = 'scrollable-';
 
 			$result = array(
-				PT_CV_Settings::setting_no_option(),
+				PT_CV_Settings::get_cvpro( __( 'Increase columns and rows in each slide, automatically cycle', 'content-views-query-and-display-post-page' ), 12, 'margin-top: 5px; margin-bottom: -5px;' )
 			);
 
 			$result = apply_filters( PT_CV_PREFIX_ . 'view_type_settings_scrollable', $result );
@@ -916,7 +917,7 @@ if ( !class_exists( 'PT_CV_Settings' ) ) {
 		 * @return string
 		 */
 		static function get_cvpro( $text, $width = 10, $style = '', $notice = false ) {
-			$url = sprintf( ' &raquo; <a href="%s" target="_blank">%s</a>', esc_url( 'https://www.contentviewspro.com/pricing/?utm_source=client&utm_medium=view_fields&utm_campaign=gopro' ), __( 'get Pro version', 'content-views-query-and-display-post-page' ) );
+			$url = sprintf( ' &raquo; <a href="%s" target="_blank">%s</a>', esc_url( 'https://www.contentviewspro.com/?utm_source=client&utm_medium=view_fields&utm_campaign=gopro' ), __( 'get Pro version', 'content-views-query-and-display-post-page' ) );
 
 			return array(
 				'label'			 => array(

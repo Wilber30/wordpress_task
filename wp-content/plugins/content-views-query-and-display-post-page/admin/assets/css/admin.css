@@ -328,6 +328,7 @@ html {
 }
 .pt-wrap .alert {text-align: center}
 /*.cvgopro {border: 1px solid #ffc7c9; border-radius: 20px; padding: 5px 15px;}*/
+p.cvgopro {color: #888; /*background: #fffdf0;*/}
 
 @media (max-width: 991px) {
     #pt-cv-form-view .nav .glyphicon {
@@ -358,4 +359,38 @@ html {
 		margin-top: 10px;
 	}
 
+}
+
+
+/* RTL */
+.rtl .nav-tabs>li {
+	float: right !important;
+}
+.rtl .form-horizontal .control-label {
+	text-align: right !important;
+	float: right !important;
+	padding-right: 15px !important;
+}
+.rtl .radio input[type="radio"], .rtl .radio-inline input[type="radio"], .rtl .checkbox input[type="checkbox"], .rtl .checkbox-inline input[type="checkbox"] {
+	float: right !important;
+	margin-right: 0em !important;
+	margin-left: 10px !important;
+}
+.rtl .col-md-1, .rtl .col-md-2, .rtl .col-md-3, .rtl .col-md-4, .rtl .col-md-5, .rtl .col-md-6, .rtl .col-md-7, .rtl .col-md-8, .rtl .col-md-9, .rtl .col-md-10, .rtl .col-md-11, .rtl .col-md-12 {
+	float: right !important;
+}
+.rtl .pt-wrap .text-muted, .rtl .pt-cv-w50 select, .rtl .pt-cv-w50 radio, .rtl .pt-cv-w200 select, .rtl .pt-cv-w200 input, .rtl .pt-cv-w200 radio, .rtl .pt-cv-group .checkbox {
+	float: right !important;
+}
+.rtl .input-group-addon:last-child {
+	border-left: 1px solid #ccc !important;
+}
+.rtl #pt-cv-group-color-font .pt-params .form-group, .rtl #pt-cv-group-date .radio, .rtl .has-popover .checkbox, .rtl .pt-cv-w50 .form-control.select2-container, .rtl .pt-cv-w50 input[type=text] {
+	float: right !important;
+}
+.rtl .input-group-addon, .rtl #pt-cv-group-color-font .pt-cv-numfield input {
+    border-radius: 0 !important;
+}
+.rtl .select2-container-multi .select2-choices li {
+	float: right !important;
 }

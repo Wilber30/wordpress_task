@@ -15,23 +15,23 @@
  * the License.
  */
 
-namespace Google\Service\ShoppingContent\Resource;
+namespace Automattic\WooCommerce\GoogleListingsAndAds\Vendor\Google\Service\ShoppingContent\Resource;
 
-use Google\Service\ShoppingContent\Account;
-use Google\Service\ShoppingContent\AccountsAuthInfoResponse;
-use Google\Service\ShoppingContent\AccountsClaimWebsiteResponse;
-use Google\Service\ShoppingContent\AccountsCustomBatchRequest;
-use Google\Service\ShoppingContent\AccountsCustomBatchResponse;
-use Google\Service\ShoppingContent\AccountsLinkRequest;
-use Google\Service\ShoppingContent\AccountsLinkResponse;
-use Google\Service\ShoppingContent\AccountsListLinksResponse;
-use Google\Service\ShoppingContent\AccountsListResponse;
-use Google\Service\ShoppingContent\AccountsUpdateLabelsRequest;
-use Google\Service\ShoppingContent\AccountsUpdateLabelsResponse;
-use Google\Service\ShoppingContent\RequestPhoneVerificationRequest;
-use Google\Service\ShoppingContent\RequestPhoneVerificationResponse;
-use Google\Service\ShoppingContent\VerifyPhoneNumberRequest;
-use Google\Service\ShoppingContent\VerifyPhoneNumberResponse;
+use Automattic\WooCommerce\GoogleListingsAndAds\Vendor\Google\Service\ShoppingContent\Account;
+use Automattic\WooCommerce\GoogleListingsAndAds\Vendor\Google\Service\ShoppingContent\AccountsAuthInfoResponse;
+use Automattic\WooCommerce\GoogleListingsAndAds\Vendor\Google\Service\ShoppingContent\AccountsClaimWebsiteResponse;
+use Automattic\WooCommerce\GoogleListingsAndAds\Vendor\Google\Service\ShoppingContent\AccountsCustomBatchRequest;
+use Automattic\WooCommerce\GoogleListingsAndAds\Vendor\Google\Service\ShoppingContent\AccountsCustomBatchResponse;
+use Automattic\WooCommerce\GoogleListingsAndAds\Vendor\Google\Service\ShoppingContent\AccountsLinkRequest;
+use Automattic\WooCommerce\GoogleListingsAndAds\Vendor\Google\Service\ShoppingContent\AccountsLinkResponse;
+use Automattic\WooCommerce\GoogleListingsAndAds\Vendor\Google\Service\ShoppingContent\AccountsListLinksResponse;
+use Automattic\WooCommerce\GoogleListingsAndAds\Vendor\Google\Service\ShoppingContent\AccountsListResponse;
+use Automattic\WooCommerce\GoogleListingsAndAds\Vendor\Google\Service\ShoppingContent\AccountsUpdateLabelsRequest;
+use Automattic\WooCommerce\GoogleListingsAndAds\Vendor\Google\Service\ShoppingContent\AccountsUpdateLabelsResponse;
+use Automattic\WooCommerce\GoogleListingsAndAds\Vendor\Google\Service\ShoppingContent\RequestPhoneVerificationRequest;
+use Automattic\WooCommerce\GoogleListingsAndAds\Vendor\Google\Service\ShoppingContent\RequestPhoneVerificationResponse;
+use Automattic\WooCommerce\GoogleListingsAndAds\Vendor\Google\Service\ShoppingContent\VerifyPhoneNumberRequest;
+use Automattic\WooCommerce\GoogleListingsAndAds\Vendor\Google\Service\ShoppingContent\VerifyPhoneNumberResponse;
 
 /**
  * The "accounts" collection of methods.
@@ -41,7 +41,7 @@ use Google\Service\ShoppingContent\VerifyPhoneNumberResponse;
  *   $accounts = $contentService->accounts;
  *  </code>
  */
-class Accounts extends \Google\Service\Resource
+class Accounts extends \Automattic\WooCommerce\GoogleListingsAndAds\Vendor\Google\Service\Resource
 {
   /**
    * Returns information about the authenticated user. (accounts.authinfo)
@@ -56,7 +56,9 @@ class Accounts extends \Google\Service\Resource
     return $this->call('authinfo', [$params], AccountsAuthInfoResponse::class);
   }
   /**
-   * Claims the website of a Merchant Center sub-account. (accounts.claimwebsite)
+   * Claims the website of a Merchant Center sub-account. Merchant accounts with
+   * approved third-party CSSs aren't required to claim a website.
+   * (accounts.claimwebsite)
    *
    * @param string $merchantId The ID of the managing account. If this parameter
    * is not the same as accountId, then this account must be a multi-client
@@ -64,9 +66,10 @@ class Accounts extends \Google\Service\Resource
    * @param string $accountId The ID of the account whose website is claimed.
    * @param array $optParams Optional parameters.
    *
-   * @opt_param bool overwrite Only available to selected merchants. When set to
-   * `True`, this flag removes any existing claim on the requested website by
-   * another account and replaces it with a claim from this account.
+   * @opt_param bool overwrite Only available to selected merchants, for example
+   * multi-client accounts (MCAs) and their sub-accounts. When set to `True`, this
+   * option removes any existing claim on the requested website and replaces it
+   * with a claim from the account that makes the request.
    * @return AccountsClaimWebsiteResponse
    */
   public function claimwebsite($merchantId, $accountId, $optParams = [])
@@ -98,8 +101,8 @@ class Accounts extends \Google\Service\Resource
    * @param string $accountId The ID of the account.
    * @param array $optParams Optional parameters.
    *
-   * @opt_param bool force Flag to delete sub-accounts with products. The default
-   * value is false.
+   * @opt_param bool force Option to delete sub-accounts with products. The
+   * default value is false.
    */
   public function delete($merchantId, $accountId, $optParams = [])
   {

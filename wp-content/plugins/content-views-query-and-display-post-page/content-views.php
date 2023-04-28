@@ -10,7 +10,7 @@
  * Plugin Name:       Content Views
  * Plugin URI:        http://wordpress.org/plugins/content-views-query-and-display-post-page/
  * Description:       Query and display <strong>posts, pages</strong> in awesome layouts (<strong>grid, scrollable list, collapsible list</strong>) easier than ever, without coding!
- * Version:           2.4.0.5
+ * Version:           2.5.0.1
  * Author:            Content Views
  * Author URI:        http://profiles.wordpress.org/pt-guy
  * Text Domain:       content-views-query-and-display-post-page
@@ -24,7 +24,7 @@ if ( !defined( 'ABSPATH' ) ) {
 }
 
 // Define Constant
-define( 'PT_CV_VERSION', '2.4.0.5' );
+define( 'PT_CV_VERSION', '2.5.0.1' );
 define( 'PT_CV_FILE', __FILE__ );
 define( 'PT_CV_PATH', plugin_dir_path( __FILE__ ) );
 include_once( PT_CV_PATH . 'includes/defines.php' );
@@ -40,6 +40,7 @@ include_once( PT_CV_PATH . 'includes/html.php' );
 include_once( PT_CV_PATH . 'includes/settings.php' );
 include_once( PT_CV_PATH . 'includes/update.php' );
 include_once( PT_CV_PATH . 'includes/values.php' );
+include_once( PT_CV_PATH . 'blocks/main.php' );
 
 // Main file
 include_once( PT_CV_PATH . 'public/content-views.php' );

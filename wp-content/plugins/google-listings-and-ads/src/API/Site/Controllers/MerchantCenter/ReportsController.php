@@ -5,7 +5,6 @@ namespace Automattic\WooCommerce\GoogleListingsAndAds\API\Site\Controllers\Merch
 
 use Automattic\WooCommerce\GoogleListingsAndAds\API\Google\MerchantReport;
 use Automattic\WooCommerce\GoogleListingsAndAds\API\Site\Controllers\BaseReportsController;
-use Automattic\WooCommerce\GoogleListingsAndAds\API\Site\Controllers\ResponseFromExceptionTrait;
 use Automattic\WooCommerce\GoogleListingsAndAds\API\TransportMethods;
 use Exception;
 use WP_REST_Request as Request;
@@ -18,8 +17,6 @@ defined( 'ABSPATH' ) || exit;
  * @package Automattic\WooCommerce\GoogleListingsAndAds\API\Site\Controllers\MerchantCenter
  */
 class ReportsController extends BaseReportsController {
-
-	use ResponseFromExceptionTrait;
 
 	/**
 	 * Register rest routes with WordPress.
@@ -89,13 +86,13 @@ class ReportsController extends BaseReportsController {
 	}
 
 	/**
-	 * Add collection parameters.
-	 *
-	 * @param array $params Initial set of collection parameters.
+	 * Get the query params for collections.
 	 *
 	 * @return array
 	 */
-	protected function add_collection_parameters( array $params ): array {
+	public function get_collection_params(): array {
+		$params = parent::get_collection_params();
+
 		$params['interval'] = [
 			'description'       => __( 'Time interval to use for segments in the returned data.', 'google-listings-and-ads' ),
 			'type'              => 'string',

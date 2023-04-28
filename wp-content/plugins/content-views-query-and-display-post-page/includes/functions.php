@@ -300,6 +300,7 @@ if ( !class_exists( 'PT_CV_Functions' ) ) {
 		static function trim_words( $text, $num_words ) {
 			$more	 = '';
 			$text	 = apply_filters( PT_CV_PREFIX_ . 'before_trim_words', $text );
+			$num_words	 = apply_filters( PT_CV_PREFIX_ . 'trim_words_number', $num_words );
 
 			/*
 			 * translators: If your word count is based on single characters (e.g. East Asian characters),

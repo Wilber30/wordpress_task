@@ -2,7 +2,7 @@
 Contributors: anilankola
 Tags: body, class, css, custom-class, page, post
 Requires at least: 4.9
-Tested up to: 5.8
+Tested up to: 6.1.1
 Requires PHP: 7
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
@@ -20,6 +20,21 @@ Steps to follow.
 4. That's it. You\'re ready to use the plugin.
 
 == Changelog ==
+
+= 1.4.1 =
+* Bug resolve
+* Woocommerce shop page add custom body class display.
+* Function defined if WooCommerce isn’t installed.
+
+= 1.4 =
+* Bug resolve
+* Compatible with new version
+* Woocommerce shop and product page add custom body class display
+* Blog post page add custom body class display
+
+= 1.3 =
+* Bug resolve
+* Compatible with new version
 
 = 1.2 =
 * Bug resolve

@@ -28,6 +28,7 @@ CREATE TABLE `{$this->get_sql_safe_name()}` (
     country varchar(2) NOT NULL,
     currency varchar(3) NOT NULL,
     rate double NOT NULL default 0,
+    options text DEFAULT NULL,
     PRIMARY KEY (id),
     KEY country (country),
     KEY currency (currency)
@@ -55,6 +56,7 @@ SQL;
 			'country'  => true,
 			'currency' => true,
 			'rate'     => true,
+			'options'  => true,
 		];
 	}
 }

@@ -153,7 +153,7 @@ PT_CV_Functions::view_submit();
 						),
 					),
 					// Upgrade to Pro: Custom post type
-					!get_option( 'pt_cv_version_pro' ) ? PT_CV_Settings::get_cvpro( __( 'Filter custom post type (product, event...)', 'content-views-query-and-display-post-page' ) ) : '',
+					!get_option( 'pt_cv_version_pro' ) ? PT_CV_Settings::get_cvpro( __( 'Filter custom post type (product, event, and so on)', 'content-views-query-and-display-post-page' ) ) : '',
 					apply_filters( PT_CV_PREFIX_ . 'custom_filters', array() ),
 					// Common Filters
 					array(
@@ -198,7 +198,6 @@ PT_CV_Functions::view_submit();
 												'desc'	 => apply_filters( PT_CV_PREFIX_ . 'setting_post_not_in', __( 'List of post IDs to exclude (comma-separated values, for example: 1,2,3)', 'content-views-query-and-display-post-page' ) ),
 											),
 										),
-										'dependence' => array( 'post__in', '' ),
 									),
 									apply_filters( PT_CV_PREFIX_ . 'exclude_extra_settings', array() ),
 									// Parent page
@@ -287,8 +286,8 @@ PT_CV_Functions::view_submit();
 							),
 						),
 					), // End Advanced Filters
-					!get_option( 'pt_cv_version_pro' ) ? PT_CV_Settings::get_cvpro( __( 'Filter by custom field', 'content-views-query-and-display-post-page' ) ) : '',
-					!get_option( 'pt_cv_version_pro' ) ? PT_CV_Settings::get_cvpro( __( 'Allow visitors to filter, search, and sort in the frontend', 'content-views-query-and-display-post-page' ) ) : '',
+					!get_option( 'pt_cv_version_pro' ) ? PT_CV_Settings::get_cvpro( __( 'Filter by custom field, published date', 'content-views-query-and-display-post-page' ) ) : '',
+					!get_option( 'pt_cv_version_pro' ) ? PT_CV_Settings::get_cvpro( __( 'Allow visitors to filter, search, and sort in the front end', 'content-views-query-and-display-post-page' ) ) : '',
 					// Settings of Advanced Filters options
 					array(
 						'label'			 => array(
@@ -366,7 +365,6 @@ PT_CV_Functions::view_submit();
 												),
 											),
 										),
-										!get_option( 'pt_cv_version_pro' ) ? PT_CV_Settings::get_cvpro( __( 'Show this grid view on the Blog, Category, Tag pages and replace the default layout', 'content-views-query-and-display-post-page' ), 12, null, true ) : '',
 										apply_filters( PT_CV_PREFIX_ . 'taxonomies_custom_settings', array() ),
 									), // End Taxonomies Settings
 									// Sort by Settings
@@ -479,6 +477,19 @@ PT_CV_Functions::view_submit();
 							),
 						),
 					),
+					!get_option( 'pt_cv_version_pro' ) ? array(
+						'label'	 => array(
+							'text' => __( 'Replace Layout', 'content-views-query-and-display-post-page' ),
+						),
+						'params'		 => array(
+							array(
+								'type'	 => 'group',
+								'params' => array(
+									PT_CV_Settings::get_cvpro( __( 'Show this grid view on the Blog, Category, Tag, Search pages and replace the default layout', 'content-views-query-and-display-post-page' ), 12, null, true )
+								),
+							),
+						),
+					) : '',
 				);
 				echo PT_Options_Framework::do_settings( $options, $settings );
 				?>
@@ -519,7 +530,7 @@ PT_CV_Functions::view_submit();
 							),
 						),
 					),
-					!get_option( 'pt_cv_version_pro' ) ? PT_CV_Settings::get_cvpro( __( 'More amazing layouts (Pinterest, Timeline...)', 'content-views-query-and-display-post-page' ), 10, 'margin-bottom:10px' ) : '',
+					!get_option( 'pt_cv_version_pro' ) ? PT_CV_Settings::get_cvpro( __( 'More amazing layouts (Pinterest, Timeline, Masonry, Glossary ...)', 'content-views-query-and-display-post-page' ), 10, 'margin-bottom:10px' ) : '',
 					apply_filters( PT_CV_PREFIX_ . 'more_responsive_settings', array(
 						'label'		 => array(
 							'text' => __( 'Responsive', 'content-views-query-and-display-post-page' ),
@@ -701,6 +712,19 @@ PT_CV_Functions::view_submit();
 							),
 						),
 					),
+					!get_option( 'pt_cv_version_pro' ) ? array(
+						'label'	 => array(
+							'text' => __( 'Style Settings', 'content-views-query-and-display-post-page' ),
+						),
+						'params'		 => array(
+							array(
+								'type'	 => 'group',
+								'params' => array(
+									PT_CV_Settings::get_cvpro( __( 'Change color, font, size, other properties of any texts; padding, margin, text direction, etc. without writing CSS', 'content-views-query-and-display-post-page' ), 12, null, true )
+								),
+							),
+						),
+					) : '',
 				);
 
 				$options = apply_filters( PT_CV_PREFIX_ . 'display_settings', $options );

@@ -21,26 +21,26 @@
 // ** Database settings - You can get this info from your web host ** //
 /** The name of the database for WordPress */
 // define( 'DB_NAME', 'mycoolblog_1390' );
-define( 'DB_NAME', 'williams_wptask' );
+define( 'DB_NAME', 'netmatters_wordpress_task' );
 
 /** Database username */
 // define( 'DB_USER', 'will' );
-define( 'DB_USER', 'williams_wellingtons' );
+define( 'DB_USER', 'root' );
 
 /** Database password */
 // define( 'DB_PASSWORD', 'maine' );
-define( 'DB_PASSWORD', 'Piz_gloria' );
+define( 'DB_PASSWORD', 'swlabr67c' );
 /** Database hostname */
 // define( 'DB_HOST', '127.0.0.1:3306' );
-define( 'DB_HOST', 'localhost' );
+define( 'DB_HOST', '127.0.0.1' );
 
 // define('WP_HOME','http://localhost:8080');
 
-define('WP_HOME','https://wordpress.william-sears.netmatters-scs.co.uk' );
+// define('WP_HOME','https://wordpress.william-sears.netmatters-scs.co.uk' );
 
 // define('WP_SITEURL','http://localhost:8080');
 
-define('WP_SITEURL', 'https://wordpress.william-sears.netmatters-scs.co.uk' );
+// define('WP_SITEURL', 'https://wordpress.william-sears.netmatters-scs.co.uk' );
 
 define( 'WP_MEMORY_LIMIT', '256M' );
 

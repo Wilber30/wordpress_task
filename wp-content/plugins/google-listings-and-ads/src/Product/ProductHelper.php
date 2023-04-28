@@ -6,14 +6,15 @@ namespace Automattic\WooCommerce\GoogleListingsAndAds\Product;
 use Automattic\WooCommerce\GoogleListingsAndAds\Exception\InvalidValue;
 use Automattic\WooCommerce\GoogleListingsAndAds\Google\GoogleProductService;
 use Automattic\WooCommerce\GoogleListingsAndAds\Infrastructure\Service;
-use Automattic\WooCommerce\GoogleListingsAndAds\MerchantCenter\MerchantCenterService;
+use Automattic\WooCommerce\GoogleListingsAndAds\MerchantCenter\TargetAudience;
 use Automattic\WooCommerce\GoogleListingsAndAds\PluginHelper;
 use Automattic\WooCommerce\GoogleListingsAndAds\Proxies\WC;
 use Automattic\WooCommerce\GoogleListingsAndAds\Value\ChannelVisibility;
 use Automattic\WooCommerce\GoogleListingsAndAds\Value\SyncStatus;
-use Google\Service\ShoppingContent\Product as GoogleProduct;
+use Automattic\WooCommerce\GoogleListingsAndAds\Vendor\Google\Service\ShoppingContent\Product as GoogleProduct;
 use WC_Product;
 use WC_Product_Variation;
+use WP_Post;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -37,28 +38,35 @@ class ProductHelper implements Service {
 	protected $wc;
 
 	/**
-	 * @var MerchantCenterService
+	 * @var TargetAudience
 	 */
-	protected $merchant_center;
+	protected $target_audience;
 
 	/**
 	 * ProductHelper constructor.
 	 *
-	 * @param ProductMetaHandler    $meta_handler
-	 * @param WC                    $wc
-	 * @param MerchantCenterService $merchant_center
+	 * @param ProductMetaHandler $meta_handler
+	 * @param WC                 $wc
+	 * @param TargetAudience     $target_audience
 	 */
-	public function __construct( ProductMetaHandler $meta_handler, WC $wc, MerchantCenterService $merchant_center ) {
+	public function __construct( ProductMetaHandler $meta_handler, WC $wc, TargetAudience $target_audience ) {
 		$this->meta_handler    = $meta_handler;
 		$this->wc              = $wc;
-		$this->merchant_center = $merchant_center;
+		$this->target_audience = $target_audience;
 	}
 
 	/**
+	 * Mark a product as synced in the local database.
+	 * This function also handles the following cleanup tasks:
+	 * - Remove any failed delete attempts
+	 * - Update the visibility (if it was previously empty)
+	 * - Remove any previous product errors (if it was synced for all target countries)
+	 *
 	 * @param WC_Product    $product
 	 * @param GoogleProduct $google_product
 	 */
 	public function mark_as_synced( WC_Product $product, GoogleProduct $google_product ) {
+		$this->meta_handler->delete_failed_delete_attempts( $product );
 		$this->meta_handler->update_synced_at( $product, time() );
 		$this->meta_handler->update_sync_status( $product, SyncStatus::SYNCED );
 		$this->update_empty_visibility( $product );
@@ -71,7 +79,7 @@ class ProductHelper implements Service {
 
 		// check if product is synced completely and remove any previous errors if it is
 		$synced_countries = array_keys( $google_ids );
-		$target_countries = $this->merchant_center->get_target_countries();
+		$target_countries = $this->target_audience->get_target_countries();
 		if ( count( $synced_countries ) === count( $target_countries ) && empty( array_diff( $synced_countries, $target_countries ) ) ) {
 			$this->meta_handler->delete_errors( $product );
 			$this->meta_handler->delete_failed_sync_attempts( $product );
@@ -95,7 +103,11 @@ class ProductHelper implements Service {
 	 */
 	public function mark_as_unsynced( WC_Product $product ) {
 		$this->meta_handler->delete_synced_at( $product );
-		$this->meta_handler->update_sync_status( $product, SyncStatus::NOT_SYNCED );
+		if ( ! $this->is_sync_ready( $product ) ) {
+			$this->meta_handler->delete_sync_status( $product );
+		} else {
+			$this->meta_handler->update_sync_status( $product, SyncStatus::NOT_SYNCED );
+		}
 		$this->meta_handler->delete_google_ids( $product );
 		$this->meta_handler->delete_errors( $product );
 		$this->meta_handler->delete_failed_sync_attempts( $product );
@@ -283,6 +295,17 @@ class ProductHelper implements Service {
 	}
 
 	/**
+	 * Get WooCommerce product by WP get_post
+	 *
+	 * @param int $product_id
+	 *
+	 * @return WP_Post|null
+	 */
+	public function get_wc_product_by_wp_post( int $product_id ): ?WP_Post {
+		return get_post( $product_id );
+	}
+
+	/**
 	 * @param WC_Product $product
 	 *
 	 * @return bool
@@ -355,6 +378,58 @@ class ProductHelper implements Service {
 	}
 
 	/**
+	 * Increment failed delete attempts.
+	 *
+	 * @since 1.12.0
+	 *
+	 * @param WC_Product $product
+	 */
+	public function increment_failed_delete_attempt( WC_Product $product ) {
+		$failed_attempts = $this->meta_handler->get_failed_delete_attempts( $product ) ?? 0;
+		$this->meta_handler->update_failed_delete_attempts( $product, $failed_attempts + 1 );
+	}
+
+	/**
+	 * Whether deleting has failed more times than the specified threshold.
+	 *
+	 * @since 1.12.0
+	 *
+	 * @param WC_Product $product
+	 *
+	 * @return boolean
+	 */
+	public function is_delete_failed_threshold_reached( WC_Product $product ): bool {
+		$failed_attempts = $this->meta_handler->get_failed_delete_attempts( $product ) ?? 0;
+		return $failed_attempts >= ProductSyncer::FAILURE_THRESHOLD;
+	}
+
+	/**
+	 * Increment failed delete attempts.
+	 *
+	 * @since 1.12.2
+	 *
+	 * @param WC_Product $product
+	 */
+	public function increment_failed_update_attempt( WC_Product $product ) {
+		$failed_attempts = $this->meta_handler->get_failed_sync_attempts( $product ) ?? 0;
+		$this->meta_handler->update_failed_sync_attempts( $product, $failed_attempts + 1 );
+	}
+
+	/**
+	 * Whether deleting has failed more times than the specified threshold.
+	 *
+	 * @since 1.12.2
+	 *
+	 * @param WC_Product $product
+	 *
+	 * @return boolean
+	 */
+	public function is_update_failed_threshold_reached( WC_Product $product ): bool {
+		$failed_attempts = $this->meta_handler->get_failed_sync_attempts( $product ) ?? 0;
+		return $failed_attempts >= ProductSyncer::FAILURE_THRESHOLD;
+	}
+
+	/**
 	 * @param WC_Product $wc_product
 	 *
 	 * @return string|null
@@ -407,11 +482,45 @@ class ProductHelper implements Service {
 	}
 
 	/**
+	 * If an item from the provided list of products has a parent, replace it with the parent ID.
+	 *
+	 * @param int[] $product_ids                        A list of WooCommerce product ID.
+	 * @param bool  $check_product_status    (Optional) Check if the product status is publish.
+	 * @param bool  $ignore_product_on_error (Optional) Ignore the product when invalid value error occurs.
+	 *
+	 * @return int[] A list of parent ID or product ID if it doesn't have a parent.
+	 *
+	 * @throws InvalidValue If the given param ignore_product_on_error is false and any of a given ID doesn't reference a valid product.
+	 *                      Or if a variation product does not have a valid parent ID (i.e. it's an orphan).
+	 *
+	 * @since 2.2.0
+	 */
+	public function maybe_swap_for_parent_ids( array $product_ids, bool $check_product_status = true, bool $ignore_product_on_error = true ) {
+		$new_product_ids = [];
+
+		foreach ( $product_ids as $index => $product_id ) {
+			try {
+				$product     = $this->get_wc_product( $product_id );
+				$new_product = $this->maybe_swap_for_parent( $product );
+				if ( ! $check_product_status || 'publish' === $new_product->get_status() ) {
+					$new_product_ids[ $index ] = $new_product->get_id();
+				}
+			} catch ( InvalidValue $exception ) {
+				if ( ! $ignore_product_on_error ) {
+					throw $exception;
+				}
+			}
+		}
+
+		return array_unique( $new_product_ids );
+	}
+
+	/**
 	 * If the provided product has a parent, return its ID. Otherwise, return the given (valid product) ID.
 	 *
 	 * @param int $product_id WooCommerce product ID.
 	 *
-	 * @return int The parent ID or product ID of it doesn't have a parent.
+	 * @return int The parent ID or product ID if it doesn't have a parent.
 	 *
 	 * @throws InvalidValue If a given ID doesn't reference a valid product. Or if a variation product does not have a
 	 *                      valid parent ID (i.e. it's an orphan).
@@ -468,5 +577,17 @@ class ProductHelper implements Service {
 		}
 
 		return $errors;
+	}
+
+	/**
+	 * Get categories list for a specific product.
+	 *
+	 * @param WC_Product $product
+	 *
+	 * @return array
+	 */
+	public function get_categories( WC_Product $product ): array {
+		$terms = get_the_terms( $product->get_id(), 'product_cat' );
+		return ( empty( $terms ) || is_wp_error( $terms ) ) ? [] : wp_list_pluck( $terms, 'name' );
 	}
 }

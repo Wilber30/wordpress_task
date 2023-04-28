@@ -3,8 +3,8 @@ Contributors: pt-guy
 Donate link: https://www.contentviewspro.com/?utm_source=wordpress&utm_medium=plugin&utm_campaign=donate
 Tags: post grid, grid plugin, grid, latest post, display post, post list, post, page, category, responsive, list, thumbnail
 Requires at least: 3.3
-Tested up to: 5.9
-Stable tag: 2.4.0.5
+Tested up to: 6.2
+Stable tag: 2.5.0.1
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -14,15 +14,19 @@ Create beautiful grid and list of WordPress posts, pages in minutes. No coding r
 
 ### Easy To Filter And Display Posts, Pages In Grid/List
 
-We believe that a beautiful grid of posts with make your WordPress site stand out and keep visitors engaged. That's why we built [Content Views](https://www.contentviewspro.com/?utm_source=wordpress&utm_medium=plugin&utm_campaign=content-views "Content Views"), a WordPress post grid and list plugin that's EASY and POWERFUL.
+We believe that a beautiful grid of posts with make your WordPress site stand out and keep visitors engaged. That's why we built [Content Views](https://www.contentviewspro.com/?utm_source=wordpress&utm_medium=plugin&utm_campaign=content-views "Content Views"), a WordPress post grid and filter plugin that's EASY and POWERFUL.
 
 Content Views helps you to create beautiful grid and list to display the recent posts, the posts of specific category, tag, author easily, without any line of code!
 
-Content Views is a 100% mobile responsive solution, so your post grid will always look great on all devices (mobiles, tablets, and desktops).
+Content Views is a 100% mobile responsive solution, so your post grid will always look great on all devices (mobile, tablet, laptop, and desktop).
 
 Content Views is also highly optimized for performance, to help improve SEO and conversions.
 
 There is no more pain in creating WordPress post grid and list.
+
+> **Content Views Pro**
+> This plugin is the lite version of the Content Views Pro plugin that comes with all the grid and filter features you will ever need including displaying custom post type, filtering by custom taxonomy and custom field, frontend filter, displaying the grid on the Blog and Category pages, displaying ads in the grid, and much more.
+> [&#187; Click here to purchase the best grid and filter plugin now](https://www.contentviewspro.com/?utm_source=wordpress&utm_medium=plugin&utm_campaign=content-views "Content Views")
 
 ### Easy to Use
 
@@ -31,7 +35,7 @@ Content Views requires no time to learn, no coding skill to create the beautiful
 There are 3 simple steps to design your post grid by Content Views:
 * Step 1: Filter any posts you want to show (with many possible options: ID, category, tag, author, keyword, status).
 * Step 2: Select a beautiful grid or list layout to display your posts. You can customize the layout in your way with many useful settings.
-* Step 3: Paste generated shortcode to anywhere you want to display your post grid.
+* Step 3: Add the created grid as block or shortcode to anywhere you want to display your post grid.
 
 [youtube https://www.youtube.com/watch?v=drxqtCiaw4I]
 
@@ -43,7 +47,7 @@ We have all the settings you need to filter and display any WordPress posts, pag
 * 100% Responsive and Mobile Friendly
 * SEO friendly and optimized for speed
 * Pagination support
-* Display grid of posts on WordPress page, widget, theme template easily by shortcode
+* Display grid of posts on WordPress page, widget, theme template easily
 * Display recent posts
 * Display posts from a specific category, tag, author, ID
 * Display posts that contain a specific keyword
@@ -55,18 +59,19 @@ We have all the settings you need to filter and display any WordPress posts, pag
 * Show posts in Collapsible list, useful for a FAQ page
 * Show posts in Scrollable list, a simple slider of posts
 * Easy to customize and extend with many custom actions, filters hook
-* PHP 7 compatible
+* PHP 8 compatible
 * GDPR compliance (Content Views does not collect and store any personal data)
 
 Give Content Views a try, and create your WordPress post grid effortlessly!
 
 ### PRO Features
 
-There is a Pro version of Content Views plugin that comes with many more valuable features to improve your WordPress post grid and list.
+There is a Pro version of Content Views plugin that comes with many advanced features to improve your WordPress post grid and list.
 [Upgrade to Pro](https://www.contentviewspro.com/?utm_source=wordpress&utm_medium=plugin&utm_campaign=content-views).
 
 PRO features list:
 
+* Support custom post type, custom taxonomy, custom field
 * Support [WooCommerce](http://sample.contentviewspro.com/supports/woocommerce-3/?utm_source=wordpress&utm_medium=plugin&utm_campaign=content-views), [Easy Digital Downloads](http://sample.contentviewspro.com/supports/easy-digital-downloads/?utm_source=wordpress&utm_medium=plugin&utm_campaign=content-views), [The Events Calendar, Events Manager](http://docs.contentviewspro.com/filter-events-by-date/?utm_source=wordpress&utm_medium=plugin&utm_campaign=content-views)... and other custom post type plugins
 * Support [Advanced Custom Fields](http://sample.contentviewspro.com/supports/advanced-custom-fields/?utm_source=wordpress&utm_medium=plugin&utm_campaign=content-views), Pods, Toolset Types, Custom Post Type UI... and other custom field plugins
 * Support membership plugins: Paid Memberships Pro, Members, Ultimate Member, MemberPress, MemberMouse, WP eMember
@@ -141,10 +146,12 @@ You will be forwarded to View page.
 
 = How to use View on my home page? =
 
-If you are using a static page as home page, you should paste shortcode **[pt_view id="VIEW_ID"]** to editor of that page.
+If you are using a static page as home page, you should add Content Views block or shortcode to editor of that page.
 If you are using "Your latest posts" as home page, you should paste this code `<?php echo do_shortcode("[pt_view id=VIEW_ID]"); ?>` to a theme file: `front-page.php` or `home.php` or `index.php`.
 
+= Does it support custom post type, custom taxonomy, custom field? =
 
+Yes, they are supported in [our Pro version](https://www.contentviewspro.com/?utm_source=wordpress&utm_medium=plugin&utm_campaign=content-views).
 
 == Screenshots ==
 
@@ -158,6 +165,21 @@ If you are using "Your latest posts" as home page, you should paste this code `<
 
 
 == Changelog ==
+
+= 2.5.0.1 - 2022/11/23 =
+* Prevent potential conflict in the block editor
+
+= 2.5.0 - 2022/11/08 =
+- Create "Content Views" block in the Block editor. Now you can add a view as block or shortcode.
+- Prevent a compatible issue caused by another plugin
+- Tweak some texts
+
+= 2.4.0.7 - 2022/06/20 =
+* Fix some layout issues in Add/Edit view page in RTL languages
+
+= 2.4.0.6 - 2022/05/18 =
+* Tested up to WordPress 6.0
+* Some improvements
 
 = 2.4.0.5 - 2022/01/26 =
 * Updated for WordPress 5.9

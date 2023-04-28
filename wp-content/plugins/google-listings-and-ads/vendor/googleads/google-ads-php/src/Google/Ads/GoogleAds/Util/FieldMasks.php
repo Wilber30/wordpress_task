@@ -21,39 +21,18 @@ namespace Google\Ads\GoogleAds\Util;
 use Google\ApiCore\GPBLabel;
 use Google\ApiCore\GPBType;
 use Google\ApiCore\Serializer;
-use Google\Protobuf\BoolValue;
-use Google\Protobuf\BytesValue;
 use Google\Protobuf\Descriptor;
 use Google\Protobuf\DescriptorPool;
-use Google\Protobuf\DoubleValue;
 use Google\Protobuf\FieldDescriptor;
 use Google\Protobuf\FieldMask;
-use Google\Protobuf\FloatValue;
-use Google\Protobuf\Int32Value;
-use Google\Protobuf\Int64Value;
 use Google\Protobuf\Internal\Message;
 use Google\Protobuf\Internal\RepeatedField;
-use Google\Protobuf\StringValue;
-use Google\Protobuf\UInt32Value;
-use Google\Protobuf\UInt64Value;
 use InvalidArgumentException;
 use UnexpectedValueException;
 
 /** Utility methods for working with field masks.*/
 class FieldMasks
 {
-    private static $WRAPPER_TYPES = [
-        DoubleValue::class,
-        FloatValue::class,
-        Int64Value::class,
-        UInt64Value::class,
-        Int32Value::class,
-        UInt32Value::class,
-        BoolValue::class,
-        StringValue::class,
-        BytesValue::class,
-    ];
-
     private static $descriptorPool = null;
 
     /**
@@ -177,35 +156,22 @@ class FieldMasks
                 switch ($fieldDescriptor->getType()) {
                     case GPBType::MESSAGE:
                         if ($hasValueChanged) {
-                            if (self::isWrapperType($fieldDescriptor->getMessageType())) {
-                                // For wrapper types, just emit the field name.
+                            if (
+                                self::shouldAddTopLevelMessageToPath(
+                                    $originalValue,
+                                    $modifiedValue,
+                                    $fieldDescriptor
+                                )
+                            ) {
                                 $paths[] = $fieldName;
                             } else {
                                 // Recursively compare to find different values.
-                                $originalPaths = $paths;
                                 self::buildPaths(
                                     $paths,
                                     $fieldName,
                                     $originalValue,
                                     $modifiedValue
                                 );
-                                // If one of the resource is an empty "non-optional" message (which
-                                // has no $hasser) and its fields are not added to $paths yet
-                                // ($originalPaths == $paths), adds its field name here as a special
-                                // case.
-                                if (
-                                    $originalPaths == $paths
-                                    && (
-                                        is_null($originalValue)
-                                            && !is_null($modifiedValue)
-                                            && !method_exists($modified, $hasser)
-                                        || !is_null($originalValue)
-                                            && is_null($modifiedValue)
-                                            && !method_exists($original, $hasser)
-                                    )
-                                ) {
-                                    $paths[] = $fieldName;
-                                }
                             }
                         }
                         break;
@@ -244,6 +210,55 @@ class FieldMasks
                 $paths[] = $currentField;
             }
         }
+    }
+
+    /**
+     * Returns true if the field should be added to the paths.
+     */
+    private static function shouldAddTopLevelMessageToPath(
+        ?Message $originalValue,
+        ?Message $modifiedValue,
+        FieldDescriptor $fieldDescriptor
+    ) {
+        return self::isClearingMessage($originalValue, $modifiedValue)
+            || self::isSettingEmptyOneof($originalValue, $modifiedValue, $fieldDescriptor);
+    }
+
+    /**
+     * Returns true if the original message contains an empty message field that is not present on
+     * the modified message, or vice-versa, in which case the user is attempting to clear the top
+     * level message field.
+     */
+    private static function isClearingMessage(
+        ?Message $originalValue,
+        ?Message $modifiedValue
+    ) {
+        // Uses byteSize() to check if there are any fields set. A message whose fields have values
+        // will always serialize to an empty string.
+        return (is_null($modifiedValue)
+                && !is_null($originalValue)
+                && empty($originalValue->serializeToString()))
+            || (is_null($originalValue)
+                && !is_null($modifiedValue)
+                && empty($modifiedValue->serializeToString()));
+    }
+
+    /**
+     * Returns true if the modified message contains an empty oneof message that is not present in
+     * the original message. In this case, we must add the field to the paths to clear the oneof
+     * field.
+     */
+    private static function isSettingEmptyOneof(
+        ?Message $originalValue,
+        ?Message $modifiedValue,
+        FieldDescriptor $fieldDescriptor
+    ) {
+        return is_null($originalValue)
+            && !is_null($modifiedValue)
+            // A oneof field will have a not null `getRealContainingOneof` value.
+            && !is_null($fieldDescriptor->getRealContainingOneof())
+            // Checks if the message has fields, regardless of whether or not they are set.
+            && self::getDescriptorForMessage($modifiedValue)->getFieldCount() === 0;
     }
 
     /**
@@ -332,15 +347,6 @@ class FieldMasks
     private static function isFieldRepeated(FieldDescriptor $fieldDescriptor)
     {
         return $fieldDescriptor->getLabel() === GPBLabel::REPEATED;
-    }
-
-    /**
-     * @param Descriptor $descriptor the descriptor to check
-     * @return bool true if this is a wrapper type
-     */
-    private static function isWrapperType(Descriptor $descriptor)
-    {
-        return in_array($descriptor->getClass(), self::$WRAPPER_TYPES);
     }
 
     // TODO: We can remove this function when it's supported in google/gax-php:

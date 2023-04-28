@@ -33,20 +33,6 @@ class Addons {
         return self::$instance;
     }
 
-    public function __construct() {
-        $this->CSSJS_load();
-        $this->Header();
-        $this->Render();
-    }
-
-    public function CSSJS_load() {
-        if (!current_user_can('activate_plugins')) :
-            die();
-        endif;
-        $this->admin_css_loader();
-        $this->extension();
-    }
-
     public function Header() {
         apply_filters('oxi-flip-box-plugin/admin_menu', TRUE);
         $this->Admin_header();
@@ -67,64 +53,60 @@ class Addons {
         $this->get_plugins = $response;
     }
 
-    public function Admin_header() {
-        ?>
-        <div class="oxi-addons-wrapper">
-            <div class="oxi-addons-import-layouts">
-                <h1>Oxilab Addons
-                </h1>
-                <p> We Develop Couple of plugins which will help you to Create Your Modern and Dynamic Websites. Just click and Install </p>
-            </div>
-        </div>
-        <?php
-    }
-
     public function Render() {
         ?>
         <div class="oxi-addons-wrapper">
             <div class="oxi-addons-row">
                 <div class="row">
-                    <?php
-                    $installed_plugins = get_plugins();
-                    $active_plugins = array_flip(get_option('active_plugins'));
+        <?php
+        $installed_plugins = get_plugins();
+        $active_plugins = array_flip(get_option('active_plugins'));
 
-                    foreach ($this->get_plugins as $key => $value) {
-                        $modulespath = $value['modules-path'];
-                        if ($modulespath != $this->current_plugins) :
-                            $file_path = $modulespath;
-                            $plugin = explode('/', $file_path)[0];
-                            $message = '';
-                            if (isset($installed_plugins[$file_path])) :
-                                if (array_key_exists($file_path, $active_plugins)) :
-                                    $message = '<a href="#" class="btn btn-light">Installed</a>';
-                                else :
-                                    $activation_url = wp_nonce_url(admin_url('plugins.php?action=activate&plugin=' . $file_path), 'activate-plugin_' . $file_path);
-                                    $message = sprintf('<a href="%s" class="btn btn-info">%s</a>', $activation_url, esc_html__('Activate', OXI_FLIP_BOX_TEXTDOMAIN));
-                                endif;
-                            else :
-                                if (current_user_can('install_plugins')) :
-                                    $install_url = wp_nonce_url(add_query_arg(array('action' => 'install-plugin', 'plugin' => $plugin), admin_url('update.php')), 'install-plugin' . '_' . $plugin);
-                                    $message = sprintf('<a href="%s" class="btn btn-success">%s</a>', $install_url, esc_html__('Install', OXI_FLIP_BOX_TEXTDOMAIN));
-                                endif;
-                            endif;
-                            ?>
+        foreach ($this->get_plugins as $key => $value) {
+            $modulespath = $value['modules-path'];
+            if ($modulespath != $this->current_plugins) :
+                $file_path = $modulespath;
+                $plugin = explode('/', $file_path)[0];
+                $message = '';
+                ?>
                             <div class="col-lg-4 col-md-6 col-sm-12">
                                 <div class="oxi-addons-modules-elements">
-                                    <img class="oxi-addons-modules-banner" src="<?php echo $value['modules-img']; ?>">
+                                    <img class="oxi-addons-modules-banner" src="<?php echo esc_url($value['modules-img']); ?>">
                                     <div class="oxi-addons-modules-action-wrapper">
-                                        <span class="oxi-addons-modules-name"><?php echo $value['modules-name']; ?></span>
-                                        <span class="oxi-addons-modules-desc"><?php echo $value['modules-desc']; ?></span>
+                                        <span class="oxi-addons-modules-name"><?php echo esc_html($value['modules-name']); ?></span>
+                                        <span class="oxi-addons-modules-desc"><?php echo esc_html($value['modules-desc']); ?></span>
                                     </div>
                                     <div class="oxi-addons-modules-action-status">
-                                        <span class="oxi-addons-modules-preview"><a href="<?php echo $value['plugin-url']; ?>" class="btn btn-dark">Preview</a></span>
-                                        <span class="oxi-addons-modules-installing"><?php echo $message; ?></span>
+                                        <span class="oxi-addons-modules-preview"><a href="<?php echo esc_url($value['plugin-url']); ?>" class="btn btn-dark">Preview</a></span>
+                                        <span class="oxi-addons-modules-installing"><?php
+                if (isset($installed_plugins[$file_path])) :
+                    if (array_key_exists($file_path, $active_plugins)) :
+                        ?>
+                                                    <a href="#" class="btn btn-light">Installed</a>
+                                                    <?php
+                                                else :
+
+                                                    $activation_url = wp_nonce_url(admin_url('plugins.php?action=activate&plugin=' . $file_path), 'activate-plugin_' . $file_path);
+                                                    ?>
+                                                    <a href="<?php echo esc_url($activation_url); ?>" class="btn btn-info">Activate</a>
+                                                <?php
+                                                endif;
+                                            else :
+                                                if (current_user_can('install_plugins')) :
+                                                    $install_url = wp_nonce_url(add_query_arg(array('action' => 'install-plugin', 'plugin' => $plugin), admin_url('update.php')), 'install-plugin' . '_' . $plugin);
+                                                    ?>
+                                                    <a href="<?php echo esc_url($install_url); ?>" class="btn btn-success">Install</a>
+                                                    <?php
+                                                endif;
+                                            endif;
+                                            ?></span>
                                     </div>
                                 </div>
                             </div>
-                            <?php
-                        endif;
-                    }
-                    ?>
+                <?php
+            endif;
+        }
+        ?>
                 </div>
             </div>
         </div>
@@ -144,6 +126,32 @@ class Addons {
                 }, 1000);';
 
         wp_add_inline_script('oxilab-bootstrap', $data);
+    }
+
+    public function __construct() {
+        $this->CSSJS_load();
+        $this->Header();
+        $this->Render();
+    }
+
+    public function CSSJS_load() {
+        if (!current_user_can('activate_plugins')) :
+            die();
+        endif;
+        $this->admin_css_loader();
+        $this->extension();
+    }
+
+    public function Admin_header() {
+        ?>
+        <div class="oxi-addons-wrapper">
+            <div class="oxi-addons-import-layouts">
+                <h1>Oxilab Addons
+                </h1>
+                <p> We Develop Couple of plugins which will help you to Create Your Modern and Dynamic Websites. Just click and Install </p>
+            </div>
+        </div>
+        <?php
     }
 
 }

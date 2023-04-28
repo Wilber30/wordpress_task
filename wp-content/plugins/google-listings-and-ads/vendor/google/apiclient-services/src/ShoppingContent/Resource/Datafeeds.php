@@ -15,13 +15,13 @@
  * the License.
  */
 
-namespace Google\Service\ShoppingContent\Resource;
+namespace Automattic\WooCommerce\GoogleListingsAndAds\Vendor\Google\Service\ShoppingContent\Resource;
 
-use Google\Service\ShoppingContent\Datafeed;
-use Google\Service\ShoppingContent\DatafeedsCustomBatchRequest;
-use Google\Service\ShoppingContent\DatafeedsCustomBatchResponse;
-use Google\Service\ShoppingContent\DatafeedsFetchNowResponse;
-use Google\Service\ShoppingContent\DatafeedsListResponse;
+use Automattic\WooCommerce\GoogleListingsAndAds\Vendor\Google\Service\ShoppingContent\Datafeed;
+use Automattic\WooCommerce\GoogleListingsAndAds\Vendor\Google\Service\ShoppingContent\DatafeedsCustomBatchRequest;
+use Automattic\WooCommerce\GoogleListingsAndAds\Vendor\Google\Service\ShoppingContent\DatafeedsCustomBatchResponse;
+use Automattic\WooCommerce\GoogleListingsAndAds\Vendor\Google\Service\ShoppingContent\DatafeedsFetchNowResponse;
+use Automattic\WooCommerce\GoogleListingsAndAds\Vendor\Google\Service\ShoppingContent\DatafeedsListResponse;
 
 /**
  * The "datafeeds" collection of methods.
@@ -31,7 +31,7 @@ use Google\Service\ShoppingContent\DatafeedsListResponse;
  *   $datafeeds = $contentService->datafeeds;
  *  </code>
  */
-class Datafeeds extends \Google\Service\Resource
+class Datafeeds extends \Automattic\WooCommerce\GoogleListingsAndAds\Vendor\Google\Service\Resource
 {
   /**
    * Deletes, fetches, gets, inserts and updates multiple datafeeds in a single
@@ -64,8 +64,10 @@ class Datafeeds extends \Google\Service\Resource
   }
   /**
    * Invokes a fetch for the datafeed in your Merchant Center account. If you need
-   * to call this method more than once per day, we recommend you use the Products
-   * service to update your product data. (datafeeds.fetchnow)
+   * to call this method more than once per day, we recommend you use the
+   * [Products service](https://developers.google.com/shopping-
+   * content/reference/rest/v2.1/products) to update your product data.
+   * (datafeeds.fetchnow)
    *
    * @param string $merchantId The ID of the account that manages the datafeed.
    * This account cannot be a multi-client account.

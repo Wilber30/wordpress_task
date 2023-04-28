@@ -19,27 +19,6 @@ class Support_Recommended {
     public $get_plugins = [];
     public $current_plugins = 'image-hover-effects-ultimate-visual-composer/index.php';
 
-    /**
-     * Revoke this function when the object is created.
-     *
-     */
-    public function __construct() {
-        if (!current_user_can('install_plugins')):
-            return;
-        endif;
-
-        require_once(ABSPATH . 'wp-admin/includes/screen.php');
-        $screen = get_current_screen();
-        if (isset($screen->parent_file) && 'plugins.php' === $screen->parent_file && 'update' === $screen->id) {
-            return;
-        }
-        $this->extension();
-        add_action('admin_notices', array($this, 'first_install'));
-        add_action('admin_enqueue_scripts', array($this, 'admin_enqueue_scripts'));
-        add_action('admin_notices', array($this, 'dismiss_button_scripts'));
-        add_action('wp_ajax_oxi_flip_admin_recommended', array($this, 'notice_dissmiss'));
-    }
-
     public function extension() {
         $response = get_transient(self::GET_LOCAL_PLUGINS);
         if (!$response || !is_array($response)) {
@@ -53,22 +32,6 @@ class Support_Recommended {
             }
         }
         $this->get_plugins = $response;
-    }
-
-    /**
-     * Admin Notice Ajax  loader
-     * @return void
-     */
-    public function notice_dissmiss() {
-        if (isset($_POST['_wpnonce']) && wp_verify_nonce(sanitize_key(wp_unslash($_POST['_wpnonce'])), 'oxi_flip_admin_recommended')):
-            $data = 'done';
-            update_option('oxilab_flip_box_recommended', $data);
-            echo 'done';
-        else:
-            return;
-        endif;
-
-        die();
     }
 
     /**
@@ -111,23 +74,24 @@ class Support_Recommended {
 
         if (count($recommend) > 2 && $recommend['modules-path'] != '') :
             $plugin = explode('/', $recommend['modules-path'])[0];
-            $massage = '<p>Thank you for using my Flipbox - Awesomes Flip Boxes Image Overlay. ' . $recommend['modules-massage'] . '</p>';
 
             $install_url = wp_nonce_url(add_query_arg(array('action' => 'install-plugin', 'plugin' => $plugin), admin_url('update.php')), 'install-plugin' . '_' . $plugin);
-            echo '<div class="oxi-addons-admin-notifications" style=" width: auto;">
-                        <h3>
-                            <span class="dashicons dashicons-flag"></span>
-                            Notifications
-                        </h3>
-                        <p></p>
-                        <div class="oxi-addons-admin-notifications-holder">
-                            <div class="oxi-addons-admin-notifications-alert">
-                                ' . $massage . '
-                                <p>' . sprintf('<a href="%s" class="button button-large button-primary">%s</a>', $install_url, esc_html__('Install Now', OXI_FLIP_BOX_TEXTDOMAIN)) . ' &nbsp;&nbsp;<a href="#" class="button button-large button-secondary oxi-flip-admin-recommended-dismiss">No, Thanks</a></p>
-                            </div>
-                        </div>
-                        <p></p>
-                    </div>';
+            ?>
+            <div class="oxi-addons-admin-notifications" style=" width: auto;">
+                <h3>
+                    <span class="dashicons dashicons-flag"></span>
+                    Notifications
+                </h3>
+                <p></p>
+                <div class="oxi-addons-admin-notifications-holder">
+                    <div class="oxi-addons-admin-notifications-alert">
+                        <p>Thank you for using my Flipbox - Awesomes Flip Boxes Image Overlay. <?php echo esc_html($recommend['modules-massage']); ?></p>
+                        <p><a href="<?php echo esc_url($install_url); ?>" class="button button-large button-primary">Install Now</a> <a href="#" class="button button-large button-secondary oxi-flip-admin-recommended-dismiss">No, Thanks</a></p>
+                    </div>
+                </div>
+                <p></p>
+            </div>
+            <?php
         endif;
     }
 
@@ -137,7 +101,7 @@ class Support_Recommended {
      */
     public function admin_enqueue_scripts() {
         wp_enqueue_script("jquery");
-        wp_enqueue_style('oxilab_flip-admin-notice-css', OXI_FLIP_BOX_URL . '/asset/backend/css/notice.css', false, OXI_FLIP_BOX_PLUGIN_VERSION);
+        wp_enqueue_style('oxilab_flip-admin-notice-css', OXI_FLIP_BOX_URL . 'asset/backend/css/notice.css', false, OXI_FLIP_BOX_PLUGIN_VERSION);
         $this->dismiss_button_scripts();
     }
 
@@ -146,8 +110,45 @@ class Support_Recommended {
      * @return void
      */
     public function dismiss_button_scripts() {
-        wp_enqueue_script('oxi_flip-admin-recommended', OXI_FLIP_BOX_URL . '/asset/backend/js/admin-recommended.js', false, OXI_FLIP_BOX_PLUGIN_VERSION);
+        wp_enqueue_script('oxi_flip-admin-recommended', OXI_FLIP_BOX_URL . 'asset/backend/js/admin-recommended.js', false, OXI_FLIP_BOX_PLUGIN_VERSION);
         wp_localize_script('oxi_flip-admin-recommended', 'oxi_flip_admin_recommended', array('ajaxurl' => admin_url('admin-ajax.php'), 'nonce' => wp_create_nonce('oxi_flip_admin_recommended')));
+    }
+
+    /**
+     * Admin Notice Ajax  loader
+     * @return void
+     */
+    public function notice_dissmiss() {
+        if (isset($_POST['_wpnonce']) && wp_verify_nonce(sanitize_key(wp_unslash($_POST['_wpnonce'])), 'oxi_flip_admin_recommended')):
+            $data = 'done';
+            update_option('oxilab_flip_box_recommended', $data);
+            echo 'done';
+        else:
+            return;
+        endif;
+
+        die();
+    }
+
+    /**
+     * Revoke this function when the object is created.
+     *
+     */
+    public function __construct() {
+        if (!current_user_can('install_plugins')):
+            return;
+        endif;
+
+        require_once(ABSPATH . 'wp-admin/includes/screen.php');
+        $screen = get_current_screen();
+        if (isset($screen->parent_file) && 'plugins.php' === $screen->parent_file && 'update' === $screen->id) {
+            return;
+        }
+        $this->extension();
+        add_action('admin_notices', array($this, 'first_install'));
+        add_action('admin_enqueue_scripts', array($this, 'admin_enqueue_scripts'));
+        add_action('admin_notices', array($this, 'dismiss_button_scripts'));
+        add_action('wp_ajax_oxi_flip_admin_recommended', array($this, 'notice_dissmiss'));
     }
 
 }

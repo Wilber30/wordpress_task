@@ -131,6 +131,25 @@ class WC_Payments_Http implements WC_Payments_Http_Interface {
 		return $this->connection_manager->is_plugin_enabled() && $this->connection_manager->is_active();
 	}
 
+
+	/**
+	 * Checks if the current user is connected to WordPress.com.
+	 *
+	 * @return bool true if the current user is connected.
+	 */
+	public function is_user_connected() {
+		return $this->connection_manager->is_user_connected();
+	}
+
+	/**
+	 * Get the wpcom user data of the current connected user.
+	 *
+	 * @return bool|array An array with the WPCOM user data on success, false otherwise.
+	 */
+	public function get_connected_user_data() {
+		return $this->connection_manager->get_connected_user_data();
+	}
+
 	/**
 	 * Checks if the site has an admin who is also a connection owner.
 	 *
@@ -163,7 +182,7 @@ class WC_Payments_Http implements WC_Payments_Http_Interface {
 
 		// Register the site to wp.com.
 		if ( ! $this->connection_manager->is_connected() ) {
-			$result = $this->connection_manager->register();
+			$result = $this->connection_manager->try_registration();
 			if ( is_wp_error( $result ) ) {
 				throw new API_Exception( $result->get_error_message(), 'wcpay_jetpack_register_site_failed', 500 );
 			}

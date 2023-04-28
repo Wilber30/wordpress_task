@@ -14,6 +14,8 @@ use WC_Payments_Token_Service;
  */
 class Eps_Payment_Method extends UPE_Payment_Method {
 
+	const PAYMENT_METHOD_STRIPE_ID = 'eps';
+
 	/**
 	 * Constructor for EPS payment method
 	 *
@@ -21,9 +23,19 @@ class Eps_Payment_Method extends UPE_Payment_Method {
 	 */
 	public function __construct( $token_service ) {
 		parent::__construct( $token_service );
-		$this->stripe_id   = 'eps';
+		$this->stripe_id   = self::PAYMENT_METHOD_STRIPE_ID;
 		$this->title       = 'EPS';
 		$this->is_reusable = false;
 		$this->currencies  = [ 'EUR' ];
+		$this->icon_url    = plugins_url( 'assets/images/payment-methods/eps.svg', WCPAY_PLUGIN_FILE );
+	}
+
+	/**
+	 * Returns testing credentials to be printed at checkout in test mode.
+	 *
+	 * @return string
+	 */
+	public function get_testing_instructions() {
+		return '';
 	}
 }

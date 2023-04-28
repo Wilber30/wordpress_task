@@ -1,7 +1,7 @@
 /**
  * External dependencies
  */
-import { Component } from 'react';
+import { Component } from '@wordpress/element';
 
 /**
  * Internal dependencies
@@ -42,6 +42,7 @@ class BlockErrorBoundary extends Component< BlockErrorBoundaryProps > {
 			header,
 			imageUrl,
 			showErrorMessage = true,
+			showErrorBlock = true,
 			text,
 			errorMessagePrefix,
 			renderError,
@@ -55,6 +56,7 @@ class BlockErrorBoundary extends Component< BlockErrorBoundaryProps > {
 			}
 			return (
 				<BlockError
+					showErrorBlock={ showErrorBlock }
 					errorMessage={ showErrorMessage ? errorMessage : null }
 					header={ header }
 					imageUrl={ imageUrl }

@@ -4,27 +4,31 @@ interface BlockErrorBase {
 	 * If it's `null` or an empty string, no image will be displayed.
 	 * If it's not defined, the default image will be used.
 	 */
-	imageUrl?: string;
+	imageUrl?: string | undefined;
 	/**
 	 * Text to display as the heading of the error block.
 	 * If it's `null` or an empty string, no header will be displayed.
 	 * If it's not defined, the default header will be used.
 	 */
-	header?: string;
+	header?: string | undefined;
 	/**
 	 * Text to display in the error block below the header.
 	 * If it's `null` or an empty string, nothing will be displayed.
 	 * If it's not defined, the default text will be used.
 	 */
-	text: React.ReactNode;
+	text?: React.ReactNode | undefined;
 	/**
 	 * Text preceeding the error message.
 	 */
-	errorMessagePrefix?: string;
+	errorMessagePrefix?: string | undefined;
 	/**
 	 * Button cta.
 	 */
-	button: React.ReactNode;
+	button?: React.ReactNode;
+	/**
+	 * Controls wether to show the error block or fail silently
+	 */
+	showErrorBlock?: boolean;
 }
 
 export interface BlockErrorProps extends BlockErrorBase {
@@ -34,7 +38,7 @@ export interface BlockErrorProps extends BlockErrorBase {
 	errorMessage: React.ReactNode;
 }
 
-type RenderErrorProps = {
+export type RenderErrorProps = {
 	errorMessage: React.ReactNode;
 };
 
@@ -42,7 +46,8 @@ export interface BlockErrorBoundaryProps extends BlockErrorBase {
 	/**
 	 * Override the default error with a function that takes the error message and returns a React component
 	 */
-	renderError: ( props: RenderErrorProps ) => React.ReactNode;
+	renderError?: ( props: RenderErrorProps ) => React.ReactNode;
+	showErrorMessage?: boolean | undefined;
 }
 
 export interface DerivedStateReturn {

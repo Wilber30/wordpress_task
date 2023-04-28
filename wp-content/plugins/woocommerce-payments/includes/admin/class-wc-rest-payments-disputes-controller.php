@@ -5,6 +5,8 @@
  * @package WooCommerce\Payments\Admin
  */
 
+use WCPay\Core\Server\Request\List_Disputes;
+
 defined( 'ABSPATH' ) || exit;
 
 /**
@@ -43,6 +45,15 @@ class WC_REST_Payments_Disputes_Controller extends WC_Payments_REST_Controller {
 		);
 		register_rest_route(
 			$this->namespace,
+			'/' . $this->rest_base . '/download',
+			[
+				'methods'             => WP_REST_Server::CREATABLE,
+				'callback'            => [ $this, 'get_disputes_export' ],
+				'permission_callback' => [ $this, 'check_permission' ],
+			]
+		);
+		register_rest_route(
+			$this->namespace,
 			'/' . $this->rest_base . '/(?P<dispute_id>\w+)',
 			[
 				'methods'             => WP_REST_Server::READABLE,
@@ -59,17 +70,6 @@ class WC_REST_Payments_Disputes_Controller extends WC_Payments_REST_Controller {
 				'permission_callback' => [ $this, 'check_permission' ],
 			]
 		);
-
-		register_rest_route(
-			$this->namespace,
-			'/payments/file',
-			[
-				'methods'             => WP_REST_Server::CREATABLE,
-				'callback'            => [ $this, 'upload_evidence' ],
-				'permission_callback' => [ $this, 'check_permission' ],
-			]
-		);
-
 		register_rest_route(
 			$this->namespace,
 			'/' . $this->rest_base . '/(?P<dispute_id>\w+)/close',
@@ -87,13 +87,9 @@ class WC_REST_Payments_Disputes_Controller extends WC_Payments_REST_Controller {
 	 * @param WP_REST_Request $request Full data about the request.
 	 */
 	public function get_disputes( WP_REST_Request $request ) {
-		$page      = (int) $request->get_param( 'page' );
-		$page_size = (int) $request->get_param( 'pagesize' );
-		$sort      = $request->get_param( 'sort' ) ?? 'created';
-		$direction = $request->get_param( 'direction' ) ?? 'desc';
-		$filters   = $this->get_disputes_filters( $request );
+		$wcpay_request = List_Disputes::from_rest_request( $request );
 
-		return $this->forward_request( 'list_disputes', [ $page, $page_size, $sort, $direction, $filters ] );
+		return $wcpay_request->handle_rest_request( 'wcpay_list_disputes_request', $request );
 	}
 
 	/**
@@ -136,15 +132,6 @@ class WC_REST_Payments_Disputes_Controller extends WC_Payments_REST_Controller {
 	}
 
 	/**
-	 * Create file and respond with file object via API.
-	 *
-	 * @param WP_REST_Request $request Full data about the request.
-	 */
-	public function upload_evidence( $request ) {
-		return $this->forward_request( 'upload_evidence', [ $request ] );
-	}
-
-	/**
 	 * Close and respond with dispute via API.
 	 *
 	 * @param WP_REST_Request $request Full data about the request.
@@ -152,6 +139,18 @@ class WC_REST_Payments_Disputes_Controller extends WC_Payments_REST_Controller {
 	public function close_dispute( $request ) {
 		$dispute_id = $request->get_param( 'dispute_id' );
 		return $this->forward_request( 'close_dispute', [ $dispute_id ] );
+	}
+
+	/**
+	 * Initiate disputes export via API.
+	 *
+	 * @param WP_REST_Request $request Full data about the request.
+	 */
+	public function get_disputes_export( $request ) {
+		$user_email = $request->get_param( 'user_email' );
+		$filters    = $this->get_disputes_filters( $request );
+
+		return $this->forward_request( 'get_disputes_export', [ $filters, $user_email ] );
 	}
 
 	/**
@@ -168,6 +167,7 @@ class WC_REST_Payments_Disputes_Controller extends WC_Payments_REST_Controller {
 				'created_before'  => $request->get_param( 'date_before' ),
 				'created_after'   => $request->get_param( 'date_after' ),
 				'created_between' => $request->get_param( 'date_between' ),
+				'search'          => $request->get_param( 'search' ),
 				'status_is'       => $request->get_param( 'status_is' ),
 				'status_is_not'   => $request->get_param( 'status_is_not' ),
 			],

@@ -1,4 +1,4 @@
-<?php
+<?php // phpcs:ignore SlevomatCodingStandard.TypeHints.DeclareStrictTypes.DeclareStrictTypesMissing
 
 namespace MailPoet\Newsletter\Renderer\Blocks;
 
@@ -25,7 +25,7 @@ class Button {
                     style="height:' . EHelper::escapeHtmlStyleAttr($element['styles']['block']['lineHeight']) . ';
                            width:' . EHelper::escapeHtmlStyleAttr($element['styles']['block']['width']) . ';
                            v-text-anchor:middle;"
-                    arcsize="' . round((int)$element['styles']['block']['borderRadius'] / (int)$element['styles']['block']['lineHeight'] * 100) . '%"
+                    arcsize="' . round((int)$element['styles']['block']['borderRadius'] / ((int)$element['styles']['block']['lineHeight'] ?: 1) * 100) . '%"
                     strokeweight="' . EHelper::escapeHtmlAttr($element['styles']['block']['borderWidth']) . '"
                     strokecolor="' . EHelper::escapeHtmlAttr($element['styles']['block']['borderColor']) . '"
                     fillcolor="' . EHelper::escapeHtmlAttr($element['styles']['block']['backgroundColor']) . '">

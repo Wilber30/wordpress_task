@@ -1,4 +1,4 @@
-<?php
+<?php // phpcs:ignore SlevomatCodingStandard.TypeHints.DeclareStrictTypes.DeclareStrictTypesMissing
 
 namespace MailPoet\Form\Block;
 
@@ -6,6 +6,7 @@ if (!defined('ABSPATH')) exit;
 
 
 use MailPoet\Form\BlockWrapperRenderer;
+use MailPoet\Form\FormHtmlSanitizer;
 use MailPoet\WP\Functions as WPFunctions;
 
 class Checkbox {
@@ -35,7 +36,8 @@ class Checkbox {
     $fieldName = 'data[' . $this->rendererHelper->getFieldName($block) . ']';
     $fieldValidation = $this->rendererHelper->getInputValidation($block, [], $formId);
 
-    $html .= $this->rendererHelper->renderLabel($block, $formSettings);
+    $html .= '<fieldset>';
+    $html .= $this->rendererHelper->renderLegend($block, $formSettings);
 
     $options = (!empty($block['params']['values'])
       ? $block['params']['values']
@@ -68,10 +70,12 @@ class Checkbox {
 
       $html .= $fieldValidation;
 
-      $html .= ' /> ' . $option['value'];
+      $html .= ' /> ' . $this->wp->wpKses($option['value'], FormHtmlSanitizer::ALLOWED_HTML);
 
       $html .= '</label>';
     }
+
+    $html .= '</fieldset>';
 
     $html .= '<span class="mailpoet_error_' . $this->wp->escAttr($block['id']) . ($formId ? '_' . $formId : '') . '"></span>';
 

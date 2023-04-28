@@ -7,7 +7,7 @@ Author: UltimatelySocial
 Author URI: http://ultimatelysocial.com
 Text Domain: ultimate-social-media-icons
 Domain Path: /languages
-Version: 2.7.2
+Version: 2.8.1
 License: GPLv2 or later
 */
 require_once 'analyst/main.php';
@@ -23,7 +23,7 @@ sfsi_error_reporting();
 
 global $wpdb;
 /* define the Root for URL and Document */
-define( 'SFSI_PLUGIN_VERSION', '2.7.2' );
+define( 'SFSI_PLUGIN_VERSION', '2.8.1' );
 define( 'SFSI_DOCROOT', dirname( __FILE__ ) );
 
 define( 'SFSI_PLUGURL', plugin_dir_url( __FILE__ ) );
@@ -89,7 +89,7 @@ register_deactivation_hook(__FILE__, 'sfsi_deactivate_plugin');
 
 register_uninstall_hook(__FILE__, 'sfsi_Unistall_plugin');
 
-if (!get_option('sfsi_pluginVersion') || get_option('sfsi_pluginVersion') < 2.72) {
+if (!get_option('sfsi_pluginVersion') || get_option('sfsi_pluginVersion') < 2.77) {
     add_action( 'init', 'sfsi_update_plugin' );
 }
 /* redirect setting page hook */
@@ -144,7 +144,8 @@ function DISPLAY_ULTIMATE_SOCIAL_ICONS($args = null, $content = null) {
 
     $return .= '<div class="sfsi_widget sfsi_shortcode_container">';
 
-    $return .= '<div id="sfsi_wDiv"></div>';
+    /* Comment for shuffle issue */
+    //$return .= '<div id="sfsi_wDiv"></div>';
 
     /* Link the main icons function */
 
@@ -167,7 +168,7 @@ function sfsi_woocommerce_after_icons() {
     $sfsi_section6 = maybe_unserialize(get_option('sfsi_section6_options', false));
     $sfsi_section9 = maybe_unserialize(get_option('sfsi_section9_options', false));
     $return = '';
-    
+
     if ($sfsi_section9["sfsi_show_via_afterposts"] == "yes" && $sfsi_section6["sfsi_display_button_type"] == "responsive_button") {
         if( isset( $sfsi_section9["sfsi_display_after_woocomerce_desc"] ) && $sfsi_section9["sfsi_display_after_woocomerce_desc"] == "yes" ) {
             echo sfsi_social_responsive_buttons( null, $sfsi_section6 );
@@ -219,6 +220,10 @@ function ultimatefbmetatags() {
     if ($metarequest == 'yes' && !empty($post_id)) {
         $post = get_post($post_id);
 
+        if (! $post){
+            return;
+        }
+
         $attachment_id = get_post_thumbnail_id($post_id);
 
         $title = str_replace('"', "", strip_tags(get_the_title($post_id)));
@@ -240,6 +245,10 @@ function ultimatefbmetatags() {
 
                 echo '<meta property="og:image" content="' . $feat_image . '" data-id="sfsi">';
             }
+
+            // Add twitter:image support
+            echo '<meta property="twitter:card" content="summary_large_image" data-id="sfsi">';
+            echo '<meta property="twitter:image" content="' . $feat_image . '" data-id="sfsi">';
 
             $metadata = wp_get_attachment_metadata($attachment_id);
 
@@ -727,7 +736,7 @@ function sfsi_admin_notice() {
         /**
          *
          * Premium Notification
-         *    
+         *
          */
 
         $sfsi_themecheck = new sfsi_ThemeCheck();
@@ -946,7 +955,7 @@ function sfsi_admin_notice() {
             sfsi_addThis_removal_notice();
             sfsi_error_reporting_notice();
         }
-       
+
         add_action( 'admin_init', 'sfsi_dismiss_admin_notice' );
 
         function sfsi_dismiss_admin_notice() {
@@ -2180,3 +2189,50 @@ function sfsi_plugin_redirect()
 
         // Include footer banner
     	include_once trailingslashit(__DIR__) . '/banner/misc.php';
+
+      // Activation of tryOutPlugins module
+      add_action('plugins_loaded', function () {
+
+        if (!(class_exists('\Inisev\Subs\Inisev_Try_Out_Plugins') || class_exists('Inisev\Subs\Inisev_Try_Out_Plugins') || class_exists('Inisev_Try_Out_Plugins'))) {
+          require_once __DIR__ . '/modules/tryOutPlugins/tryOutPlugins.php';
+          $try_out_plugins = new \Inisev\Subs\Inisev_Try_Out_Plugins(__FILE__, __DIR__, 'Ultimate Social Media Icons', 'admin.php?page=sfsi-options');
+        }
+
+      });
+
+      if (!(class_exists('\Inisev\Subs\InisevBlackFriday') || class_exists('Inisev\Subs\InisevBlackFriday') || class_exists('InisevBlackFriday'))) {
+        require_once __DIR__ . DIRECTORY_SEPARATOR . 'modules' . DIRECTORY_SEPARATOR . 'blackfriday2022' . DIRECTORY_SEPARATOR . 'bf.php';
+      }
+      $blackfriday_banner = new \Inisev\Subs\InisevBlackFriday('ultimate-social-media-icons', 'Ultimate Social Media Icons', 'http://bit.ly/3TVZQJ1', ['admin.php?page=sfsi-options']);
+
+      // Actions of tryOutPlugins
+      if (!has_action('wp_ajax_tifm_save_decision')) {
+        add_action('wp_ajax_tifm_save_decision', function () {
+
+          if (isset($_POST['decision'])) {
+
+            if ($_POST['decision'] == 'true') {
+              update_option('_tifm_feature_enabled', 'enabled');
+              delete_option('_tifm_disable_feature_forever', true);
+              wp_send_json_success();
+              exit;
+            } else if ($_POST['decision'] == 'false') {
+              update_option('_tifm_feature_enabled', 'disabled');
+              update_option('_tifm_disable_feature_forever', true);
+              wp_send_json_success();
+              exit;
+            } else if ($_POST['decision'] == 'reset') {
+              delete_option('_tifm_feature_enabled');
+              delete_option('_tifm_hide_notice_forever');
+              delete_option('_tifm_disable_feature_forever');
+              wp_send_json_success();
+              exit;
+            }
+
+            wp_send_json_error();
+            exit;
+
+          }
+
+        });
+      }

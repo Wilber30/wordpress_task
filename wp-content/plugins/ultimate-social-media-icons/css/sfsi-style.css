@@ -1077,7 +1077,15 @@ ul.tab_3_icns li .radio {
 }
 
 .scale,
-.scale-div {
+.scale-div,
+.sfsi-mouseOver-effect.sfsi-mouseOver-effect-scale a.sfsi_responsive_fluid:hover,
+.sfsi-mouseOver-effect.sfsi-mouseOver-effect-combo a.sfsi_responsive_fluid:hover,
+.sfsi-mouseOver-effect.sfsi-mouseOver-effect-scale .sfsi_premium_sticky_icons_container a:hover,
+.sfsi-mouseOver-effect.sfsi-mouseOver-effect-combo .sfsi_premium_sticky_icons_container a:hover,
+.sfsi-mouseOver-effect.sfsi-mouseOver-effect-scale .sf_icon a:hover,
+.sfsi-mouseOver-effect.sfsi-mouseOver-effect-combo .sf_icon a:hover,
+.sfsi_Sicons.sfsi-mouseOver-effect.sfsi-mouseOver-effect-scale .sf_fb.sf_icon:hover,
+.sfsi_Sicons.sfsi-mouseOver-effect.sfsi-mouseOver-effect-combo .sf_fb.sf_icon:hover {
     -webkit-transform: scale(1.1);
     -moz-transform: scale(1.1);
     -o-transform: scale(1.1);
@@ -1120,8 +1128,6 @@ ul.tab_3_icns li .radio {
     margin: 0 8px 0 0;
 }
 
-
-
 .sfsi_Sicons.left .sf_twiter {
     margin: 2px 7px 0 0;
 }
@@ -1137,8 +1143,6 @@ ul.tab_3_icns li .radio {
 .sfsi_Sicons.right .sf_twiter {
     margin: 2px 0 0 8px;
 }
-
-
 
 .sfsi_Sicons .sf_subscrbe,
 .sfsi_Sicons .sf_twiter {
@@ -2838,7 +2842,7 @@ ul.cstmskin_iconlist {
     width: 110px;
 }
 
-.sfsi_Sicons .sf_subscrbe .bot_no {
+.sfsi_Sicons:not( .sfsi_Sicons_position_right ) .sf_subscrbe .bot_no {
     background: rgba(0, 0, 0, 0) url(images/count_left_arow.png) no-repeat scroll 0 0 / 27px auto;
     font-size: 12px !important;
     left: 67px;
@@ -3473,10 +3477,10 @@ ul.sfsi_icn_listing8 li .tb_4_ck{
     text-align: center;
     white-space: pre;
     width: 35px;
-    height: 29px;
+    height: 20px;
     z-index: 9;
     display: inline-block;
-    vertical-align: bottom;
+    vertical-align: text-top;
 }
 
 .sfsi_icons_container>a {
@@ -3912,4 +3916,62 @@ amp-facebook-like{
     align-items: center;
     justify-content: center;
     height: 100%;
+}
+
+/* mouseOver effect */
+
+.sfsi-mouseOver-effect.sfsi-mouseOver-effect-fade_in a.sfsi_responsive_fluid,
+.sfsi-mouseOver-effect.sfsi-mouseOver-effect-combo a.sfsi_responsive_fluid,
+.sfsi-mouseOver-effect.sfsi-mouseOver-effect-fade_in .sfsi_premium_sticky_icons_container a,
+.sfsi-mouseOver-effect.sfsi-mouseOver-effect-combo .sfsi_premium_sticky_icons_container a,
+.sfsi-mouseOver-effect.sfsi-mouseOver-effect-fade_in .sf_icon a,
+.sfsi-mouseOver-effect.sfsi-mouseOver-effect-combo .sf_icon a,
+.sfsi_Sicons.sfsi-mouseOver-effect.sfsi-mouseOver-effect-fade_in .sf_fb.sf_icon,
+.sfsi_Sicons.sfsi-mouseOver-effect.sfsi-mouseOver-effect-combo .sf_fb.sf_icon {
+    opacity: 0.6 !important;
+}
+.sfsi-mouseOver-effect.sfsi-mouseOver-effect-fade_in a.sfsi_responsive_fluid:hover,
+.sfsi-mouseOver-effect.sfsi-mouseOver-effect-combo a.sfsi_responsive_fluid:hover,
+.sfsi-mouseOver-effect.sfsi-mouseOver-effect-fade_in .sfsi_premium_sticky_icons_container a:hover,
+.sfsi-mouseOver-effect.sfsi-mouseOver-effect-combo .sfsi_premium_sticky_icons_container a:hover,
+.sfsi-mouseOver-effect.sfsi-mouseOver-effect-fade_in .sf_icon a:hover,
+.sfsi-mouseOver-effect.sfsi-mouseOver-effect-combo .sf_icon a:hover,
+.sfsi_Sicons.sfsi-mouseOver-effect.sfsi-mouseOver-effect-fade_in .sf_fb.sf_icon:hover,
+.sfsi_Sicons.sfsi-mouseOver-effect.sfsi-mouseOver-effect-combo .sf_fb.sf_icon:hover {
+    opacity: 1 !important;
+    transition: all 0.6s ease 0s !important;
+}
+
+.sfsi-mouseOver-effect.sfsi-mouseOver-effect-scale a.sfsi_responsive_fluid:hover, 
+.sfsi-mouseOver-effect.sfsi-mouseOver-effect-combo a.sfsi_responsive_fluid:hover,
+.sfsi-mouseOver-effect.sfsi-mouseOver-effect-scale .sfsi_premium_sticky_icons_container a:hover, 
+.sfsi-mouseOver-effect.sfsi-mouseOver-effect-combo .sfsi_premium_sticky_icons_container a:hover,
+.sfsi-mouseOver-effect.sfsi-mouseOver-effect-scale .sf_icon a:hover,
+.sfsi-mouseOver-effect.sfsi-mouseOver-effect-combo .sf_icon a:hover,
+.sfsi_Sicons.sfsi-mouseOver-effect.sfsi-mouseOver-effect-scale .sf_fb.sf_icon:hover,
+.sfsi_Sicons.sfsi-mouseOver-effect.sfsi-mouseOver-effect-combo .sf_fb.sf_icon:hover {
+    z-index: 99999 !important;
+    transition: all 0.6s ease 0s !important;
+}
+
+.sfsi_Sicons.sfsi-mouseOver-effect .sf_icon a,
+.sfsi_Sicons.sfsi_Sicons_position_right .sf_subscrbe.sf_icon a {
+    display: inline-block;
+}
+
+.sfsi_Sicons.sfsi_Sicons.sfsi_Sicons.sfsi_Sicons_position_right .sf_icon .fb_iframe_widget,
+.sfsi_Sicons.sfsi_Sicons.sfsi_Sicons.sfsi_Sicons_position_right .sf_icon .fb_iframe_widget>* {
+    margin-left: 0;
+}
+
+.vk_tool_bdr .sfsi_inside .icon1,
+.vk_tool_bdr .sfsi_inside .icon1 a,
+.vk_tool_bdr .sfsi_inside .icon2,
+.vk_tool_bdr .sfsi_inside .icon2 a {
+    display: flex;
+    align-items: center;
+}
+
+#sfsi_floater .sfsi_tool_tip_2 {
+    display: none;
 }

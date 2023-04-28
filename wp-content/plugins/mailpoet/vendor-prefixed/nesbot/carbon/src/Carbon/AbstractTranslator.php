@@ -17,10 +17,11 @@ abstract class AbstractTranslator extends Translation\Translator
  public static function get($locale = null)
  {
  $locale = $locale ?: 'en';
- if (!isset(static::$singletons[$locale])) {
- static::$singletons[$locale] = new static($locale);
+ $key = static::class === Translator::class ? $locale : static::class . '|' . $locale;
+ if (!isset(static::$singletons[$key])) {
+ static::$singletons[$key] = new static($locale);
  }
- return static::$singletons[$locale];
+ return static::$singletons[$key];
  }
  public function __construct($locale, MessageFormatterInterface $formatter = null, $cacheDir = null, $debug = \false)
  {
@@ -94,6 +95,7 @@ abstract class AbstractTranslator extends Translation\Translator
  }
  $catalogue = $this->getCatalogue($locale);
  $format = $this instanceof TranslatorStrongTypeInterface ? $this->getFromCatalogue($catalogue, (string) $id, $domain) : $this->getCatalogue($locale)->get((string) $id, $domain);
+ // @codeCoverageIgnore
  if ($format instanceof Closure) {
  // @codeCoverageIgnoreStart
  try {
@@ -108,10 +110,7 @@ abstract class AbstractTranslator extends Translation\Translator
  }
  protected function loadMessagesFromFile($locale)
  {
- if (isset($this->messages[$locale])) {
- return \true;
- }
- return $this->resetMessages($locale);
+ return isset($this->messages[$locale]) || $this->resetMessages($locale);
  }
  public function setMessages($locale, $messages)
  {
@@ -130,7 +129,7 @@ abstract class AbstractTranslator extends Translation\Translator
  }
  public function setLocale($locale)
  {
- $locale = \preg_replace_callback('/[-_]([a-z]{2,}|[0-9]{2,})/', function ($matches) {
+ $locale = \preg_replace_callback('/[-_]([a-z]{2,}|\\d{2,})/', function ($matches) {
  // _2-letters or YUE is a region, _3+-letters is a variant
  $upper = \strtoupper($matches[1]);
  if ($upper === 'YUE' || $upper === 'ISO' || \strlen($upper) < 3) {
@@ -149,7 +148,7 @@ abstract class AbstractTranslator extends Translation\Translator
  $locales = $this->getAvailableLocales($locale);
  $completeLocaleChunks = \preg_split('/[_.-]+/', $completeLocale);
  $getScore = function ($language) use($completeLocaleChunks) {
- return static::compareChunkLists($completeLocaleChunks, \preg_split('/[_.-]+/', $language));
+ return self::compareChunkLists($completeLocaleChunks, \preg_split('/[_.-]+/', $language));
  };
  \usort($locales, function ($first, $second) use($getScore) {
  return $getScore($second) <=> $getScore($first);
@@ -163,11 +162,11 @@ abstract class AbstractTranslator extends Translation\Translator
  if (\str_contains($locale, '_') && $this->loadMessagesFromFile($macroLocale = \preg_replace('/^([^_]+).*$/', '$1', $locale))) {
  parent::setLocale($macroLocale);
  }
- if ($this->loadMessagesFromFile($locale) || $this->initializing) {
+ if (!$this->loadMessagesFromFile($locale) && !$this->initializing) {
+ return \false;
+ }
  parent::setLocale($locale);
  return \true;
- }
- return \false;
  }
  public function __debugInfo()
  {

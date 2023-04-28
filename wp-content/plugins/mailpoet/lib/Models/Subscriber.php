@@ -1,4 +1,4 @@
-<?php
+<?php // phpcs:ignore SlevomatCodingStandard.TypeHints.DeclareStrictTypes.DeclareStrictTypesMissing
 
 namespace MailPoet\Models;
 
@@ -51,15 +51,15 @@ class Subscriber extends Model {
     parent::__construct();
 
     $this->addValidations('email', [
-      'required' => WPFunctions::get()->__('Please enter your email address', 'mailpoet'),
-      'validEmail' => WPFunctions::get()->__('Your email address is invalid!', 'mailpoet'),
+      'required' => __('Please enter your email address', 'mailpoet'),
+      'validEmail' => __('Your email address is invalid!', 'mailpoet'),
     ]);
   }
 
   public static function findOne($id = false) {
     if (is_int($id) || (string)(int)$id === $id) {
       return parent::findOne($id);
-    } else if (strlen(trim($id)) > 0) {
+    } else if (strlen(trim((string)$id)) > 0) {
       return parent::where('email', $id)->findOne();
     }
     return false;
@@ -77,7 +77,7 @@ class Subscriber extends Model {
 
   public function save() {
     // convert email to lowercase format
-    $this->email = strtolower($this->email);
+    $this->email = strtolower((string)$this->email);
     return parent::save();
   }
 
@@ -163,7 +163,7 @@ class Subscriber extends Model {
       ->findMany();
     $segmentList = [];
     $segmentList[] = [
-      'label' => WPFunctions::get()->__('All Lists', 'mailpoet'),
+      'label' => __('All Lists', 'mailpoet'),
       'value' => '',
     ];
 
@@ -171,6 +171,7 @@ class Subscriber extends Model {
       ->whereNull('deleted_at')
       ->count();
     $subscribersWithoutSegmentLabel = sprintf(
+      // translators: %s is the number of subscribers without a segment.
       __('Subscribers without a list (%s)', 'mailpoet'),
       number_format($subscribersWithoutSegment)
     );
@@ -702,6 +703,7 @@ class Subscriber extends Model {
   public static function subscribe($subscriberData = [], $segmentIds = []) {
     trigger_error('Calling Subscriber::subscribe() is deprecated and will be removed. Use MailPoet\API\MP\v1\API instead. ', E_USER_DEPRECATED);
     $service = ContainerWrapper::getInstance()->get(\MailPoet\Subscribers\SubscriberActions::class);
-    return $service->subscribe($subscriberData, $segmentIds);
+    [$subscriber] = $service->subscribe($subscriberData, $segmentIds);
+    return $subscriber;
   }
 }

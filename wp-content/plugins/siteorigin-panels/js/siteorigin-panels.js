@@ -582,16 +582,18 @@ module.exports = panels.view.dialog.extend( {
 			var $$ = $( this );
 			var panelsData = thisView.builder.model.getPanelsData();
 			var postName = $( 'input[name="post_title"], .editor-post-title__input' ).val();
-			if ( ! postName ) {
-				postName = $('input[name="post_ID"]').val();
-			} else if ( $( '.block-editor-page' ).length ) {
+			if ( ( ! postName || postName === '' ) && $( '.block-editor-page' ).length ) {
+				postName = $( '.wp-block-post-title' ).text();
+			}
+			panelsData.name = postName !== '' ? postName : $( 'input[name="post_ID"]' ).val();
+
+			// Append block position id to filename.
+			if ( $( '.block-editor-page' ).length ) {
 				var currentBlockPosition = thisView.getCurrentBlockPosition();
 				if ( currentBlockPosition >= 0 ) {
-					postName += '-' + currentBlockPosition; 
+					panelsData.name += '-' + currentBlockPosition; 
 				}
-
 			}
-			panelsData.name = postName;
 			$$.find( 'input[name="panels_export_data"]' ).val( JSON.stringify( panelsData ) );
 		} );
 
@@ -1856,7 +1858,8 @@ module.exports = panels.view.dialog.extend( {
 			'action': 'so_panels_widget_form',
 			'widget': this.model.get( 'class' ),
 			'instance': JSON.stringify( this.model.get( 'values' ) ),
-			'raw': this.model.get( 'raw' )
+			'raw': this.model.get( 'raw' ),
+			'postId': this.builder.config.postId
 		};
 
 		var $soContent = this.$( '.so-content' );
@@ -2278,6 +2281,15 @@ module.exports = {
 			serial.thingType = 'row-model';
 		} else if( model instanceof  panels.model.widget ) {
 			serial.thingType = 'widget-model';
+		}
+
+		// Can Page Builder cross domain copy paste?
+		if (
+			typeof SiteOriginPremium == 'object' &&
+			typeof SiteOriginPremium.CrossDomainCopyPasteAddon == 'function' &&
+			typeof SiteOriginPremium.CrossDomainCopyPasteAddon.allowed == 'boolean'
+		) {
+			SiteOriginPremium.CrossDomainCopyPasteAddon().copy( serial );
 		}
 
 		// Store this in local storage
@@ -3721,6 +3733,10 @@ module.exports = Backbone.Model.extend( {
 	 * @returns string The "cleaned" title.
 	 */
 	cleanTitle: function( title ) {
+		// Prevent situation where invalid titles are processed for cleaning.
+		if ( typeof title !== 'string' ) {
+			return false;
+		}
 		title = title.replace( /<\/?[^>]+(>|$)/g, "" );
 		var parts = title.split( " " );
 		parts = parts.slice( 0, 20 );
@@ -3753,7 +3769,9 @@ module.exports = Backbone.Model.extend( {
 				for ( var i = 0; i < fields.length; i++ ) {
 					if ( k == fields[i] ) {
 						widgetTitle = thisView.cleanTitle( values[ k ] )
-						break;
+						if ( widgetTitle ) {
+							break;
+						}
 					}
 				}
 				if ( widgetTitle ) {
@@ -3768,7 +3786,9 @@ module.exports = Backbone.Model.extend( {
 				thisView.isValidTitle( values[ k ] )
 			) {
 				widgetTitle = thisView.cleanTitle( values[ k ] )
-				break;
+				if ( widgetTitle ) {
+					break;
+				}
 			}
 		};
 
@@ -4153,6 +4173,7 @@ module.exports = Backbone.View.extend( {
 	dataField: false,
 	currentData: '',
 	contentPreview: '',
+	initialContentPreviewSetup: false,
 
 	attachedToEditor: false,
 	attachedVisible: false,
@@ -4221,7 +4242,11 @@ module.exports = Backbone.View.extend( {
 		// Check if we have preview markup available.
 		$panelsMetabox = $( '#siteorigin-panels-metabox' );
 		if ( $panelsMetabox.length ) {
-			this.contentPreview = $.parseHTML( $panelsMetabox.data( 'preview-markup' ) );
+			var previewContent = $.parseHTML( $panelsMetabox.data( 'preview-markup' ) );
+
+			if ( previewContent !== null ) {
+				this.contentPreview = previewContent.length > 1 ? previewContent[1] : previewContent;
+			}
 		}
 
 		// Set the builder for each dialog and render it.
@@ -4548,11 +4573,15 @@ module.exports = Backbone.View.extend( {
 
 		var builderView = this;
 		var builderID = builderView.$el.attr( 'id' );
+		var container = 'parent';
 
-		// Create the sortable for the rows
-		var wpVersion = $( 'body' ).attr( 'class' ).match( /branch-([0-9-]+)/ )[0].replace( /\D/g,'' );
+		if ( ! $( 'body' ).hasClass( 'wp-customizer' ) && $( 'body' ).attr( 'class' ).match( /version-([0-9-]+)/ )[0].replace( /\D/g,'' ) < 59 ) {
+			wpVersion = '#wpwrap';
+		}
+
+		// Create the sortable element for rows.
 		this.rowsSortable = this.$( '.so-rows-container:not(.sow-row-color)' ).sortable( {
-			appendTo: wpVersion >= 59 ? 'parent' : '#wpwrap',
+			appendTo: container,
 			items: '.so-row-container',
 			handle: '.so-row-move',
 			// For the block editor, where it's possible to have multiple Page Builder blocks on a page.
@@ -4814,7 +4843,7 @@ module.exports = Backbone.View.extend( {
 		// Display the live editor button in the toolbar
 		if ( this.liveEditor.hasPreviewUrl() ) {
 			var addLEButton = false;
-			if ( ! panels.helpers.editor.isBlockEditor() ) {
+			if ( ! panels.helpers.editor.isBlockEditor() || $( '.widgets-php' ).length ) {
 				addLEButton = true;
 			} else if ( wp.data.select( 'core/editor' ).getEditedPostAttribute( 'status' ) != 'auto-draft' ) {
 				addLEButton = true;
@@ -4923,12 +4952,17 @@ module.exports = Backbone.View.extend( {
 					},
 					function ( content ) {
 						// Post content doesn't need to be generated on load while contentPreview does.
-						if ( this.contentPreview && content.post_content !== '' ) {
+						if (
+							this.contentPreview &&
+							content.post_content !== '' &&
+							this.initialContentPreviewSetup
+						) {
 							this.updateEditorContent( content.post_content );
 						}
 
 						if ( content.preview !== '' ) {
 							this.contentPreview = content.preview;
+							this.initialContentPreviewSetup = true;
 						}
 					}.bind( this )
 				);
@@ -5920,6 +5954,30 @@ module.exports = Backbone.View.extend( {
 			silent: false
 		}, options );
 
+		// Allow for external field validation when attempting to close a widget.
+		if ( typeof this.widgetView == 'object' ) {
+			var values = this.getFormValues();
+			if ( typeof values.widgets == 'object' ) {
+				validSave = $( document ).triggerHandler(
+					'close_dialog_validation',
+					[
+						// Widget values.
+						values.widgets[ this.model.cid ],
+						// Widget Class
+						this.model.attributes.class,
+						// Model instance - used for finding field markup.
+						this.model.cid,
+						// Instance.
+						this
+					]
+				);
+			}
+
+			if ( typeof validSave == 'boolean' && ! validSave ) {
+				return false;
+			}
+		}
+
 		if ( ! options.silent ) {
 			this.trigger( 'close_dialog' );
 		}
@@ -6348,11 +6406,7 @@ module.exports = Backbone.View.extend( {
 	closeAndSave: function(){
 		this.close( false );
 		// Finds the submit input for saving without publishing draft posts.
-		if ( $( '.block-editor-page' ).length ) {
-			$( '.editor-post-publish-button' )[0].click();
-		} else {
-			$( '#submitdiv input[type="submit"][name="save"]' )[0].click();
-		}
+		$( '#submitdiv input[type="submit"][name="save"], .editor-post-publish-button, .edit-widgets-header__actions .is-primary' )[0].click();
 	},
 
 	/**
@@ -6670,9 +6724,21 @@ module.exports = Backbone.View.extend( {
 	 * @returns {panels.view.row}
 	 */
 	render: function () {
-		var rowColorLabel = this.model.has( 'color_label' ) ? this.model.get( 'color_label' ) : 1;
+		var rowColorLabel = this.model.has( 'color_label' ) ? this.model.get( 'color_label' ) : panelsOptions.row_color.default;
 		var rowLabel = this.model.has( 'label' ) ? this.model.get( 'label' ) : '';
-		this.setElement( this.template( { rowColorLabel: rowColorLabel, rowLabel: rowLabel } ) );
+
+		// Migrate legacy row color labels.
+		if ( typeof rowColorLabel == 'number' && typeof panelsOptions.row_color.migrations[ rowColorLabel ] == 'string' ) {
+			this.$el.removeClass( 'so-row-color-' + rowColorLabel );
+			rowColorLabel = panelsOptions.row_color.migrations[ rowColorLabel ];
+			this.$el.addClass( 'so-row-color-' + rowColorLabel );
+			this.model.set( 'color_label', rowColorLabel );
+		}
+
+		this.setElement( this.template( {
+			rowColorLabel: rowColorLabel,
+			rowLabel: rowLabel
+		} ) );
 		this.$el.data( 'view', this );
 
 		// Create views for the cells in this row
@@ -6946,7 +7012,7 @@ module.exports = Backbone.View.extend( {
 		this.$( '.so-row-color' ).removeClass( 'so-row-color-selected' );
 		var clickedColorElem = $( event.target );
 		var newColorLabel = clickedColorElem.data( 'color-label' );
-		var oldColorLabel = this.model.has( 'color_label' ) ? this.model.get( 'color_label' ) : 1;
+		var oldColorLabel = this.model.has( 'color_label' ) ? this.model.get( 'color_label' ) : panelsOptions.row_color.default;
 		clickedColorElem.addClass( 'so-row-color-selected' );
 		this.$el.removeClass( 'so-row-color-' + oldColorLabel );
 		this.$el.addClass( 'so-row-color-' + newColorLabel );
@@ -7216,6 +7282,14 @@ module.exports = Backbone.View.extend( {
 					return el;
 				} );
 			}
+
+			// Trigger a change event when user selects a color.
+			panelsOptions.wpColorPickerOptions.change = function( e, ui ) {
+				setTimeout( function() {
+					$( e.target ).trigger( 'change' );
+				}, 100 );
+			};
+
 			this.$( '.so-wp-color-field' ).wpColorPicker( panelsOptions.wpColorPickerOptions );
 		}
 
@@ -7231,7 +7305,7 @@ module.exports = Backbone.View.extend( {
 					// Create the media frame.
 					frame = wp.media( {
 						// Set the title of the modal.
-						title: 'choose',
+						title: panelsOptions.add_media,
 
 						// Tell the modal to show only images.
 						library: {
@@ -7262,7 +7336,7 @@ module.exports = Backbone.View.extend( {
 						$s.find( '.current-image' ).css( 'background-image', 'url(' + url + ')' );
 
 						// Store the ID
-						$s.find( '.so-image-selector > input' ).val( attachment.id );
+						$s.find( '.so-image-selector > input' ).val( attachment.id ).trigger( 'change' )
 
 						$s.find( '.remove-image' ).removeClass( 'hidden' );
 					} );
@@ -7397,7 +7471,74 @@ module.exports = Backbone.View.extend( {
 			text.on( 'change', setValue );
 			unit.on( 'change', setValue );
 		} );
-		
+
+		// Set up all the toggle fields
+		this.$( '.style-field-toggle' ).each( function () {
+			var $$ = $( this );
+			var checkbox = $$.find( '.so-toggle-switch-input' );
+			var settings = $$.find( '.so-toggle-fields' );
+
+			checkbox.on( 'change', function() {
+				if ( $( this ).prop( 'checked' ) ) {
+					settings.slideDown();
+				} else {
+					settings.slideUp();
+				}
+			} );
+		} );
+		this.$( '.style-field-toggle .so-toggle-switch-input' ).trigger( 'change' );
+
+		// Conditionally show Background related settings.
+		var $background_image = this.$( '.so-field-background_image_attachment' ),
+			$background_image_display = this.$( '.so-field-background_display' ),
+			$background_image_size = this.$( '.so-field-background_image_size' );
+
+		if (
+			$background_image.length &&
+			(
+				$background_image_display.length ||
+				$background_image_size.length
+			)
+		) {
+			var soBackgroundImageVisibility = function() {
+				var hasImage = $background_image.find( '[name="style[background_image_attachment]"]' );
+
+				if ( ! hasImage.val() || hasImage.val() == 0 ) {
+					hasImage = $background_image.find( '[name="style[background_image_attachment_fallback]"]' );
+				}
+
+				if ( hasImage.val() && hasImage.val() != 0 ) {
+					$background_image_display.show();
+					$background_image_size.show();
+				} else {
+					$background_image_display.hide();
+					$background_image_size.hide();
+				}
+			}
+			soBackgroundImageVisibility();
+			$background_image.find( '[name="style[background_image_attachment]"], [name="style[background_image_attachment_fallback]"]' ).on( 'change', soBackgroundImageVisibility );
+			$background_image.find( '.remove-image' ).on( 'click', soBackgroundImageVisibility );
+		}
+
+		// Conditionally show Border related settings.
+		var $border_color = this.$( '.so-field-border_color' ),
+			$border_thickness = this.$( '.so-field-border_thickness' );
+
+		if ( $border_color.length && $border_thickness.length ) {
+			var soBorderVisibility = function() {
+				if ( $border_color.find( '.so-wp-color-field' ).val() ) {
+					$border_thickness.show();
+					$border_thickness.show();
+				} else {
+					$border_thickness.hide();
+					$border_thickness.hide();
+				}
+			}
+			soBorderVisibility();
+			$border_color.find( '.so-wp-color-field' ).on( 'change', soBorderVisibility );
+			$border_color.find( '.wp-picker-clear' ).on( 'click', soBorderVisibility );
+		}
+
 		// Allow other plugins to setup custom fields.
 		$( document ).trigger( 'setup_style_fields', this );
 	}

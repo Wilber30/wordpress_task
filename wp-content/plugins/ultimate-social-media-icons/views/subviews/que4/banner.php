@@ -62,7 +62,7 @@
         <span class="star">&#9733;</span>
         <a href="https://www.ultimatelysocial.com/usm-premium/?utm_source=usmi_settings_page&utm_campaign=more_icons_designs&utm_medium=banner" target="_blank"><?php 
             printf(
-                __( 'See all &nbsp;%1$sfeatures&nbsp;%2$sPremium Plugin', 'ultimate-social-media-icons' ),
+                __( 'See all %1$sfeatures%2$s Premium Plugin', 'ultimate-social-media-icons' ),
                 '<span class="sbold">',
                 '</span>'
             );

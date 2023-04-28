@@ -1,4 +1,4 @@
-<?php
+<?php // phpcs:ignore SlevomatCodingStandard.TypeHints.DeclareStrictTypes.DeclareStrictTypesMissing
 
 namespace MailPoet\Subscription;
 
@@ -34,13 +34,20 @@ class Comment {
   }
 
   public function extendLoggedOutForm() {
+    // The method returns escaped content
+    // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped, WordPressDotOrg.sniffs.OutputEscaping.UnescapedOutputParameter
     echo $this->getSubscriptionField();
   }
 
-  private function getSubscriptionField() {
+  /**
+   * Returns escaped HTML for the subscription field.
+   *
+   * @return string
+   */
+  private function getSubscriptionField(): string {
     $label = $this->settings->get(
       'subscribe.on_comment.label',
-      WPFunctions::get()->__('Yes, please add me to your mailing list.', 'mailpoet')
+      __('Yes, please add me to your mailing list.', 'mailpoet')
     );
 
     return '<p class="comment-form-mailpoet">
@@ -50,7 +57,7 @@ class Comment {
           id="mailpoet_subscribe_on_comment"
           value="1"
           name="mailpoet[subscribe_on_comment]"
-        />&nbsp;' . esc_attr($label) . '
+        />&nbsp;' . esc_html($label) . '
       </label>
     </p>';
   }
@@ -102,7 +109,7 @@ class Comment {
     if (!empty($segmentIds)) {
       $comment = WPFunctions::get()->getComment($commentId);
 
-      $result = $this->subscriberActions->subscribe(
+      $this->subscriberActions->subscribe(
         [
           'email' => $comment->comment_author_email, // phpcs:ignore Squiz.NamingConventions.ValidVariableName.MemberNotCamelCaps
           'first_name' => $comment->comment_author, // phpcs:ignore Squiz.NamingConventions.ValidVariableName.MemberNotCamelCaps

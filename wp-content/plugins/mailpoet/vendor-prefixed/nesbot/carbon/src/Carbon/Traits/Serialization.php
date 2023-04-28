@@ -23,7 +23,7 @@ trait Serialization
  }
  return $instance;
  }
- #[ReturnTypeWillChange]
+ #[\ReturnTypeWillChange]
  public static function __set_state($dump)
  {
  if (\is_string($dump)) {
@@ -41,17 +41,38 @@ trait Serialization
  }
  return $properties;
  }
- #[ReturnTypeWillChange]
+ public function __serialize() : array
+ {
+ if (isset($this->timezone_type)) {
+ return ['date' => $this->date ?? null, 'timezone_type' => $this->timezone_type, 'timezone' => $this->timezone ?? null];
+ }
+ $timezone = $this->getTimezone();
+ $export = ['date' => $this->format('Y-m-d H:i:s.u'), 'timezone_type' => $timezone->getType(), 'timezone' => $timezone->getName()];
+ // @codeCoverageIgnoreStart
+ if (\extension_loaded('msgpack') && isset($this->constructedObjectId)) {
+ $export['dumpDateProperties'] = ['date' => $this->format('Y-m-d H:i:s.u'), 'timezone' => \serialize($this->timezone ?? null)];
+ }
+ // @codeCoverageIgnoreEnd
+ if ($this->localTranslator ?? null) {
+ $export['dumpLocale'] = $this->locale ?? null;
+ }
+ return $export;
+ }
+ #[\ReturnTypeWillChange]
  public function __wakeup()
  {
- if (\get_parent_class() && \method_exists(parent::class, '__wakeup')) {
+ if (parent::class && \method_exists(parent::class, '__wakeup')) {
  // @codeCoverageIgnoreStart
  try {
  parent::__wakeup();
  } catch (Throwable $exception) {
+ try {
  // FatalError occurs when calling msgpack_unpack() in PHP 7.4 or later.
  ['date' => $date, 'timezone' => $timezone] = $this->dumpDateProperties;
  parent::__construct($date, \unserialize($timezone));
+ } catch (Throwable $ignoredException) {
+ throw $exception;
+ }
  }
  // @codeCoverageIgnoreEnd
  }
@@ -62,7 +83,29 @@ trait Serialization
  }
  $this->cleanupDumpProperties();
  }
- #[ReturnTypeWillChange]
+ public function __unserialize(array $data) : void
+ {
+ // @codeCoverageIgnoreStart
+ try {
+ $this->__construct($data['date'] ?? null, $data['timezone'] ?? null);
+ } catch (Throwable $exception) {
+ if (!isset($data['dumpDateProperties']['date'], $data['dumpDateProperties']['timezone'])) {
+ throw $exception;
+ }
+ try {
+ // FatalError occurs when calling msgpack_unpack() in PHP 7.4 or later.
+ ['date' => $date, 'timezone' => $timezone] = $data['dumpDateProperties'];
+ $this->__construct($date, \unserialize($timezone));
+ } catch (Throwable $ignoredException) {
+ throw $exception;
+ }
+ }
+ // @codeCoverageIgnoreEnd
+ if (isset($data['dumpLocale'])) {
+ $this->locale($data['dumpLocale']);
+ }
+ }
+ #[\ReturnTypeWillChange]
  public function jsonSerialize()
  {
  $serializer = $this->localSerializer ?? static::$serializer;
@@ -77,9 +120,11 @@ trait Serialization
  }
  public function cleanupDumpProperties()
  {
+ if (\PHP_VERSION < 8.199999999999999) {
  foreach ($this->dumpProperties as $property) {
  if (isset($this->{$property})) {
  unset($this->{$property});
+ }
  }
  }
  return $this;

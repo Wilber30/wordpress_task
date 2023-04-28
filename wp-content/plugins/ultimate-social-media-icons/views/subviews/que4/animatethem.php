@@ -32,10 +32,10 @@
                 </div>
                 <div class="effectContainer">
                     <div class="effectName">
-                        <input class="styled" type="radio" name="sfsi_same_icons_mouseOver_effect" value="combo" <?php echo ( isset( $option3['sfsi_mouseOver_effect'] ) && $option3['sfsi_mouseOver_effect'] == 'combo' ) ?  'checked="true"' : ''; ?> />
+                        <input class="styled" type="radio" name="sfsi_same_icons_mouseOver_effect" value="combo" <?php echo ( isset( $option3['sfsi_mouseOver_effect'] ) && $option3['sfsi_mouseOver_effect'] == 'combo' ) ? 'checked="true"' : ''; ?> />
 
                         <label>
-                            <span><?php _e( 'FCombo', 'ultimate-social-media-icons' ); ?></span>
+                            <span><?php _e( 'Combo (Fade In , Scale)', 'ultimate-social-media-icons' ); ?></span>
                             <span><?php _e( '(Both fade in and scale effects)', 'ultimate-social-media-icons' ); ?></span>
                         </label>
                     </div>

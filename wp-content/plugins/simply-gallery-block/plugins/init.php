@@ -62,10 +62,12 @@ function pgc_sgb_plugin_frontend_scripts()
         $field_value = get_post_meta( $post->ID, 'pgc_sgb_lightbox_settings', true );
         
         if ( isset( $field_value ) && $field_value !== '' ) {
-            $field_value = json_decode( $field_value );
-            if ( property_exists( $field_value, 'enableLightbox' ) ) {
-                if ( $field_value->enableLightbox === false ) {
-                    return;
+            $field_value = json_decode( $field_value, true );
+            if ( isset( $field_value ) ) {
+                if ( isset( $field_value['enableLightbox'] ) ) {
+                    if ( $field_value['enableLightbox'] === false ) {
+                        return;
+                    }
                 }
             }
         }
@@ -166,7 +168,7 @@ function pgc_sgb_add_albums_preset_page()
     $pr_sub_page_albums_hook_suffix = add_submenu_page(
         'edit.php?post_type=' . PGC_SGB_POST_TYPE,
         'SimpLy Premium',
-        'Albums Preset',
+        esc_html__( 'Albums Preset', 'simply-gallery-block' ),
         'manage_options',
         'pgc-simply-albums-presets',
         'pgc_sgb_plugin_albums_sh_page'
@@ -212,7 +214,7 @@ function pgc_sgb_add_blocks_preset_page()
         );
         wp_localize_script( PGC_SGB_PLUGIN_SLUG . '-page-settings-script', 'PGC_SGB_OPTIONS_PAGE', $globalJS );
         if ( function_exists( 'wp_set_script_translations' ) ) {
-            wp_set_script_translations( PGC_SGB_PLUGIN_SLUG . '-page-settings-script', 'simply-gallery-block' );
+            wp_set_script_translations( PGC_SGB_PLUGIN_SLUG . '-page-settings-script', 'simply-gallery-block', PGC_SGB_URL . 'languages' );
         }
     }
     
@@ -267,7 +269,7 @@ function pgc_sgb_add_lightbox_admin_page()
         );
         wp_localize_script( PGC_SGB_PLUGIN_SLUG . '-lightbox-page-settings-script', 'PGC_SGB_OPTIONS_PAGE', $globalJS );
         if ( function_exists( 'wp_set_script_translations' ) ) {
-            wp_set_script_translations( PGC_SGB_PLUGIN_SLUG . '-lightbox-page-settings-script', 'simply-gallery-block' );
+            wp_set_script_translations( PGC_SGB_PLUGIN_SLUG . '-lightbox-page-settings-script', 'simply-gallery-block', PGC_SGB_URL . 'languages' );
         }
     }
     
@@ -279,7 +281,7 @@ function pgc_sgb_add_lightbox_admin_page()
     $pr_sub_page_lightbox_hook_suffix = add_submenu_page(
         'edit.php?post_type=' . PGC_SGB_POST_TYPE,
         'SimpLy Lightbox',
-        'Lightbox for native WordPress Gallery',
+        esc_html__( 'Lightbox for native WordPress Gallery', 'simply-gallery-block' ),
         'manage_options',
         'pgc-simply-lightbox-options',
         'pgc_sgb_plugin_lightbox_admin_page'
@@ -314,13 +316,11 @@ function pgc_sgb_add_welcome_page()
             'assets'   => PGC_SGB_URL . 'assets/',
             'adminurl' => get_admin_url(),
             'postType' => PGC_SGB_POST_TYPE,
-            'ajaxurl'  => admin_url( 'admin-ajax.php' ),
-            'nonce'    => wp_create_nonce( 'pgc-sgb-nonce' ),
             'version'  => PGC_SGB_VERSION,
         );
         wp_localize_script( PGC_SGB_PLUGIN_SLUG . '-page-welcome-script', 'PGC_SGB_WELCOME_PAGE', $globalJS );
         if ( function_exists( 'wp_set_script_translations' ) ) {
-            wp_set_script_translations( PGC_SGB_PLUGIN_SLUG . '-page-welcome-script', 'simply-gallery-block' );
+            wp_set_script_translations( PGC_SGB_PLUGIN_SLUG . '-page-welcome-script', 'simply-gallery-block', PGC_SGB_URL . 'languages' );
         }
     }
     
@@ -329,15 +329,19 @@ function pgc_sgb_add_welcome_page()
         echo  '<div id="' . PGC_SGB_PLUGIN_SLUG . '-welcome-page"></div>' ;
     }
     
-    $pr_sub_page_hook_suffix = add_submenu_page(
-        'edit.php?post_type=' . PGC_SGB_POST_TYPE,
-        'Welcome',
-        'FEATURES & FAQ',
-        'read',
-        'pgc-simply-welcome',
-        'pgc_sgb_print_welcome_page'
-    );
-    add_action( "admin_print_scripts-{$pr_sub_page_hook_suffix}", 'pgc_sgb_plugin_welcome_assets' );
+    
+    if ( current_user_can( 'upload_files' ) ) {
+        $pr_sub_page_hook_suffix = add_submenu_page(
+            'edit.php?post_type=' . PGC_SGB_POST_TYPE,
+            'Welcome',
+            esc_html__( 'FEATURES & FAQ', 'simply-gallery-block' ),
+            'read',
+            'pgc-simply-welcome',
+            'pgc_sgb_print_welcome_page'
+        );
+        add_action( "admin_print_scripts-{$pr_sub_page_hook_suffix}", 'pgc_sgb_plugin_welcome_assets' );
+    }
+
 }
 
 add_action( 'admin_menu', 'pgc_sgb_add_welcome_page' );

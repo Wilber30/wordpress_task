@@ -1,4 +1,4 @@
-<?php
+<?php // phpcs:ignore SlevomatCodingStandard.TypeHints.DeclareStrictTypes.DeclareStrictTypesMissing
 
 namespace MailPoet\Cron\Workers\KeyCheck;
 
@@ -13,6 +13,7 @@ use MailPoet\WP\Functions as WPFunctions;
 use MailPoetVendor\Carbon\Carbon;
 
 abstract class KeyCheckWorker extends SimpleWorker {
+  /** @var Bridge|null */
   public $bridge;
 
   /** @var CronWorkerScheduler */

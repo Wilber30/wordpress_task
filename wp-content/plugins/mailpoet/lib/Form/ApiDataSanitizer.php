@@ -1,4 +1,4 @@
-<?php
+<?php // phpcs:ignore SlevomatCodingStandard.TypeHints.DeclareStrictTypes.DeclareStrictTypesMissing
 
 namespace MailPoet\Form;
 
@@ -45,7 +45,7 @@ class ApiDataSanitizer {
     return $body;
   }
 
-  private function sanitizeBlock(array $block): array {
+  public function sanitizeBlock(array $block): array {
     if (!isset($this->htmlSanitizeConfig[$block['type']])) {
       return $block;
     }

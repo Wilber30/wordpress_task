@@ -1,14 +1,16 @@
-<?php
+<?php // phpcs:ignore SlevomatCodingStandard.TypeHints.DeclareStrictTypes.DeclareStrictTypesMissing
 
 namespace MailPoet\Subscribers\ImportExport;
 
 if (!defined('ABSPATH')) exit;
 
 
+use MailPoet\CustomFields\CustomFieldsRepository;
 use MailPoet\DI\ContainerWrapper;
 use MailPoet\Entities\SegmentEntity;
-use MailPoet\Models\CustomField;
+use MailPoet\Entities\TagEntity;
 use MailPoet\Segments\SegmentsSimpleListRepository;
+use MailPoet\Tags\TagRepository;
 use MailPoet\Util\Helpers;
 
 class ImportExportFactory {
@@ -21,11 +23,19 @@ class ImportExportFactory {
   /** @var SegmentsSimpleListRepository */
   private $segmentsListRepository;
 
+  /** @var CustomFieldsRepository */
+  private $customFieldsRepository;
+
+  /** @var TagRepository */
+  private $tagRepository;
+
   public function __construct(
     $action = null
   ) {
     $this->action = $action;
     $this->segmentsListRepository = ContainerWrapper::getInstance()->get(SegmentsSimpleListRepository::class);
+    $this->customFieldsRepository = ContainerWrapper::getInstance()->get(CustomFieldsRepository::class);
+    $this->tagRepository = ContainerWrapper::getInstance()->get(TagRepository::class);
   }
 
   public function getSegments() {
@@ -42,7 +52,7 @@ class ImportExportFactory {
     return array_map(function($segment) {
       return [
         'id' => $segment['id'],
-        'name' => $segment['name'],
+        'name' => esc_attr($segment['name']),
         'count' => $segment['subscribers'],
       ];
     }, $segments);
@@ -83,7 +93,7 @@ class ImportExportFactory {
   }
 
   public function getSubscriberCustomFields() {
-    return CustomField::findArray();
+    return $this->customFieldsRepository->findAllAsArray();
   }
 
   public function formatSubscriberCustomFields($subscriberCustomFields) {
@@ -171,6 +181,12 @@ class ImportExportFactory {
       );
       $data['maxPostSizeBytes'] = Helpers::getMaxPostSize('bytes');
       $data['maxPostSize'] = Helpers::getMaxPostSize();
+      $data['tags'] = array_map(function (TagEntity $tag): array {
+        return [
+          'id' => $tag->getId(),
+          'name' => $tag->getName(),
+        ];
+      }, $this->tagRepository->findAll());
     }
     $data['zipExtensionLoaded'] = extension_loaded('zip');
     return $data;

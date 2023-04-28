@@ -1,24 +1,29 @@
-<?php
+<?php // phpcs:ignore SlevomatCodingStandard.TypeHints.DeclareStrictTypes.DeclareStrictTypesMissing
 
 namespace MailPoet\Newsletter\Scheduler;
 
 if (!defined('ABSPATH')) exit;
 
 
+use MailPoet\Cron\Workers\SendingQueue\SendingQueue;
 use MailPoet\Entities\NewsletterEntity;
 use MailPoet\Entities\NewsletterOptionEntity;
 use MailPoet\Entities\NewsletterOptionFieldEntity;
+use MailPoet\Entities\ScheduledTaskEntity;
+use MailPoet\Entities\SendingQueueEntity;
 use MailPoet\Logging\LoggerFactory;
-use MailPoet\Models\SendingQueue;
 use MailPoet\Newsletter\NewsletterPostsRepository;
 use MailPoet\Newsletter\NewslettersRepository;
 use MailPoet\Newsletter\Options\NewsletterOptionFieldsRepository;
 use MailPoet\Newsletter\Options\NewsletterOptionsRepository;
-use MailPoet\Tasks\Sending as SendingTask;
+use MailPoet\Newsletter\Sending\ScheduledTasksRepository;
+use MailPoet\Newsletter\Sending\SendingQueuesRepository;
+use MailPoet\WP\DateTime;
 use MailPoet\WP\Posts;
 
 class PostNotificationScheduler {
 
+  const SECONDS_IN_MINUTE = 60;
   const SECONDS_IN_HOUR = 3600;
   const LAST_WEEKDAY_FORMAT = 'L';
   const INTERVAL_DAILY = 'daily';
@@ -43,21 +48,36 @@ class PostNotificationScheduler {
   /** @var NewsletterPostsRepository */
   private $newsletterPostsRepository;
 
+  /** @var Scheduler */
+  private $scheduler;
+
+  /*** @var ScheduledTasksRepository */
+  private $scheduledTasksRepository;
+
+  /*** @var SendingQueuesRepository */
+  private $sendingQueuesRepository;
+
   public function __construct(
     NewslettersRepository $newslettersRepository,
     NewsletterOptionsRepository $newsletterOptionsRepository,
     NewsletterOptionFieldsRepository $newsletterOptionFieldsRepository,
-    NewsletterPostsRepository $newsletterPostsRepository
+    NewsletterPostsRepository $newsletterPostsRepository,
+    Scheduler $scheduler,
+    ScheduledTasksRepository $scheduledTasksRepository,
+    SendingQueuesRepository $sendingQueuesRepository
   ) {
     $this->loggerFactory = LoggerFactory::getInstance();
     $this->newslettersRepository = $newslettersRepository;
     $this->newsletterOptionsRepository = $newsletterOptionsRepository;
     $this->newsletterOptionFieldsRepository = $newsletterOptionFieldsRepository;
     $this->newsletterPostsRepository = $newsletterPostsRepository;
+    $this->scheduler = $scheduler;
+    $this->scheduledTasksRepository = $scheduledTasksRepository;
+    $this->sendingQueuesRepository = $sendingQueuesRepository;
   }
 
   public function transitionHook($newStatus, $oldStatus, $post) {
-    $this->loggerFactory->getLogger(LoggerFactory::TOPIC_POST_NOTIFICATIONS)->addInfo(
+    $this->loggerFactory->getLogger(LoggerFactory::TOPIC_POST_NOTIFICATIONS)->info(
       'transition post notification hook initiated',
       [
         'post_id' => $post->ID,
@@ -73,7 +93,7 @@ class PostNotificationScheduler {
   }
 
   public function schedulePostNotification($postId) {
-    $this->loggerFactory->getLogger(LoggerFactory::TOPIC_POST_NOTIFICATIONS)->addInfo(
+    $this->loggerFactory->getLogger(LoggerFactory::TOPIC_POST_NOTIFICATIONS)->info(
       'schedule post notification hook',
       ['post_id' => $postId]
     );
@@ -93,8 +113,8 @@ class PostNotificationScheduler {
     }
   }
 
-  public function createPostNotificationSendingTask(NewsletterEntity $newsletter): ?SendingTask {
-    $notificationHistory = $this->newslettersRepository->findSendigNotificationHistoryWithPausedTask($newsletter);
+  public function createPostNotificationSendingTask(NewsletterEntity $newsletter): ?ScheduledTaskEntity {
+    $notificationHistory = $this->newslettersRepository->findSendingNotificationHistoryWithoutPausedTask($newsletter);
     if (count($notificationHistory) > 0) {
       return null;
     }
@@ -103,7 +123,7 @@ class PostNotificationScheduler {
     if (!$scheduleOption) {
       return null;
     }
-    $nextRunDate = Scheduler::getNextRunDate($scheduleOption->getValue());
+    $nextRunDate = $this->scheduler->getNextRunDateTime($scheduleOption->getValue());
     if (!$nextRunDate) {
       return null;
     }
@@ -112,20 +132,33 @@ class PostNotificationScheduler {
     $lastQueue = $newsletter->getLatestQueue();
     $task = $lastQueue !== null ? $lastQueue->getTask() : null;
     $scheduledAt = $task !== null ? $task->getScheduledAt() : null;
-    if ($scheduledAt && $scheduledAt->format('Y-m-d H:i:s') === $nextRunDate) {
+    if ($scheduledAt && $scheduledAt->format('Y-m-d H:i:s') === $nextRunDate->format('Y-m-d H:i:s')) {
       return null;
     }
 
-    $sendingTask = SendingTask::create();
-    $sendingTask->newsletterId = $newsletter->getId();
-    $sendingTask->status = SendingQueue::STATUS_SCHEDULED;
-    $sendingTask->scheduledAt = $nextRunDate;
-    $sendingTask->save();
-    $this->loggerFactory->getLogger(LoggerFactory::TOPIC_POST_NOTIFICATIONS)->addInfo(
+    $scheduledTask = new ScheduledTaskEntity();
+    $scheduledTask->setType(SendingQueue::TASK_TYPE);
+    $scheduledTask->setStatus(ScheduledTaskEntity::STATUS_SCHEDULED);
+    $scheduledTask->setScheduledAt($nextRunDate);
+    $scheduledTask->setPriority(ScheduledTaskEntity::PRIORITY_MEDIUM);
+    $this->scheduledTasksRepository->persist($scheduledTask);
+    $this->scheduledTasksRepository->flush();
+
+    $sendingQueue = new SendingQueueEntity();
+    $sendingQueue->setNewsletter($newsletter);
+    $sendingQueue->setTask($scheduledTask);
+    $this->sendingQueuesRepository->persist($sendingQueue);
+    $this->sendingQueuesRepository->flush();
+    $scheduledTask->setSendingQueue($sendingQueue);
+
+    $this->loggerFactory->getLogger(LoggerFactory::TOPIC_POST_NOTIFICATIONS)->info(
       'schedule post notification',
-      ['sending_task' => $sendingTask->id(), 'scheduled_at' => $nextRunDate]
+      [
+        'sending_task' => $scheduledTask->getId(),
+        'scheduled_at' => $nextRunDate->format(DateTime::DEFAULT_DATE_TIME_FORMAT),
+      ]
     );
-    return $sendingTask;
+    return $scheduledTask;
   }
 
   public function processPostNotificationSchedule(NewsletterEntity $newsletter) {
@@ -133,9 +166,10 @@ class PostNotificationScheduler {
     $intervalType = $intervalTypeOption ? $intervalTypeOption->getValue() : null;
 
     $timeOfDayOption = $newsletter->getOption(NewsletterOptionFieldEntity::NAME_TIME_OF_DAY);
-    $hour = $timeOfDayOption ? (int)$timeOfDayOption->getValue() / self::SECONDS_IN_HOUR : null;
+    $hour = $timeOfDayOption ? (int)floor((int)$timeOfDayOption->getValue() / self::SECONDS_IN_HOUR) : null;
+    $minute = $timeOfDayOption ? ((int)$timeOfDayOption->getValue() - (int)($hour * self::SECONDS_IN_HOUR)) / self::SECONDS_IN_MINUTE : null;
 
-    $weekDayOption = $newsletter->getOption(NewsletterOptionFieldEntity::NAME_WEK_DAY);
+    $weekDayOption = $newsletter->getOption(NewsletterOptionFieldEntity::NAME_WEEK_DAY);
     $weekDay = $weekDayOption ? $weekDayOption->getValue() : null;
 
     $monthDayOption = $newsletter->getOption(NewsletterOptionFieldEntity::NAME_MONTH_DAY);
@@ -147,16 +181,16 @@ class PostNotificationScheduler {
     switch ($intervalType) {
       case self::INTERVAL_IMMEDIATE:
       case self::INTERVAL_DAILY:
-        $schedule = sprintf('0 %s * * *', $hour);
+        $schedule = sprintf('%s %s * * *', $minute, $hour);
         break;
       case self::INTERVAL_WEEKLY:
-        $schedule = sprintf('0 %s * * %s', $hour, $weekDay);
+        $schedule = sprintf('%s %s * * %s', $minute, $hour, $weekDay);
         break;
       case self::INTERVAL_NTHWEEKDAY:
-        $schedule = sprintf('0 %s ? * %s%s', $hour, $weekDay, $nthWeekDay);
+        $schedule = sprintf('%s %s ? * %s%s', $minute, $hour, $weekDay, $nthWeekDay);
         break;
       case self::INTERVAL_MONTHLY:
-        $schedule = sprintf('0 %s %s * *', $hour, $monthDay);
+        $schedule = sprintf('%s %s %s * *', $minute, $hour, $monthDay);
         break;
       case self::INTERVAL_IMMEDIATELY:
       default:

@@ -1,4 +1,4 @@
-<?php
+<?php // phpcs:ignore SlevomatCodingStandard.TypeHints.DeclareStrictTypes.DeclareStrictTypesMissing
 
 namespace MailPoet\Form;
 
@@ -8,7 +8,9 @@ if (!defined('ABSPATH')) exit;
 use MailPoet\API\JSON\API;
 use MailPoet\Config\Renderer as TemplateRenderer;
 use MailPoet\Entities\FormEntity;
-use MailPoet\Util\Security;
+use MailPoet\Subscribers\SubscribersRepository;
+use MailPoet\Subscribers\SubscriberSubscribeController;
+use MailPoet\WooCommerce\Helper as WCHelper;
 use MailPoet\WP\Functions as WPFunctions;
 
 class DisplayFormInWPContent {
@@ -17,6 +19,12 @@ class DisplayFormInWPContent {
 
   const TYPES = [
     FormEntity::DISPLAY_TYPE_BELOW_POST,
+    FormEntity::DISPLAY_TYPE_POPUP,
+    FormEntity::DISPLAY_TYPE_FIXED_BAR,
+    FormEntity::DISPLAY_TYPE_SLIDE_IN,
+  ];
+
+  const WITH_COOKIE_TYPES = [
     FormEntity::DISPLAY_TYPE_POPUP,
     FormEntity::DISPLAY_TYPE_FIXED_BAR,
     FormEntity::DISPLAY_TYPE_SLIDE_IN,
@@ -43,18 +51,37 @@ class DisplayFormInWPContent {
   /** @var TemplateRenderer */
   private $templateRenderer;
 
+  /** @var SubscribersRepository */
+  private $subscribersRepository;
+
+  /** @var SubscriberSubscribeController */
+  private $subscriberSubscribeController;
+
+  /** @var WCHelper */
+  private $woocommerceHelper;
+
+  private $wooShopPageId = null;
+
+  private $inWooProductLoop = false;
+
   public function __construct(
     WPFunctions $wp,
     FormsRepository $formsRepository,
     Renderer $formRenderer,
     AssetsController $assetsController,
-    TemplateRenderer $templateRenderer
+    TemplateRenderer $templateRenderer,
+    SubscriberSubscribeController $subscriberSubscribeController,
+    SubscribersRepository $subscribersRepository,
+    WCHelper $woocommerceHelper
   ) {
     $this->wp = $wp;
     $this->formsRepository = $formsRepository;
     $this->formRenderer = $formRenderer;
     $this->assetsController = $assetsController;
     $this->templateRenderer = $templateRenderer;
+    $this->subscriberSubscribeController = $subscriberSubscribeController;
+    $this->subscribersRepository = $subscribersRepository;
+    $this->woocommerceHelper = $woocommerceHelper;
   }
 
   /**
@@ -63,7 +90,7 @@ class DisplayFormInWPContent {
    * @param mixed $content
    * @return string|mixed
    */
-  public function display($content = null) {
+  private function display($content = null) {
     if (!is_string($content) || !$this->shouldDisplay()) return $content;
 
     $forms = $this->getForms();
@@ -79,6 +106,16 @@ class DisplayFormInWPContent {
     return $result;
   }
 
+  public function contentDisplay($content = null) {
+    $this->inWooProductLoop = false;
+    return $this->display($content);
+  }
+
+  public function wooProductListDisplay($content = null) {
+    $this->inWooProductLoop = true;
+    return $this->display($content);
+  }
+
   private function shouldDisplay(): bool {
     $result = true;
     // This is a fix Yoast plugin and Shapely theme compatibility
@@ -90,9 +127,26 @@ class DisplayFormInWPContent {
     }
     // this code ensures that we display the form only on a page which is related to single post
     if (!$this->wp->isSingle() && !$this->wp->isPage()) $result = $this->wp->applyFilters('mailpoet_display_form_is_single', false);
+
+    // Ensure form does not show up multiple times when called from the woocommerce_product_loop_end filter
+    if ($this->inWooProductLoop) $result = $this->displayFormInProductListPage();
+
     $noFormsCache = $this->wp->getTransient(DisplayFormInWPContent::NO_FORM_TRANSIENT_KEY);
     if ($noFormsCache === '1') $result = false;
     return $result;
+  }
+
+  private function displayFormInProductListPage(): bool {
+    $displayCheck = $this->wp->applyFilters('mailpoet_display_form_in_product_listing', true);
+
+    $shopPageId = $this->woocommerceHelper->wcGetPageId('shop');
+    $this->wooShopPageId = $shopPageId && $shopPageId > 0 ? $shopPageId : null;
+
+    if ($displayCheck && !is_null($this->wooShopPageId) && $this->wp->isPage($this->wooShopPageId)) {
+      return true;
+    }
+
+    return $displayCheck && $this->wp->isArchive() && $this->wp->isPostTypeArchive('product');
   }
 
   private function saveNoForms() {
@@ -163,6 +217,8 @@ class DisplayFormInWPContent {
     $templateData['animation'] = $formSettings['form_placement'][$displayType]['animation'] ?? '';
     $templateData['fontFamily'] = $formSettings['font_family'] ?? '';
     $templateData['enableExitIntent'] = false;
+    // Set default value for cookie expiration for backward compatibility with forms without this value
+    $templateData['cookieFormExpirationTime'] = $formSettings['form_placement'][$displayType]['cookieExpiration'] ?? 7;
     if (
       isset($formSettings['form_placement'][$displayType]['exit_intent_enabled'])
       && ($formSettings['form_placement'][$displayType]['exit_intent_enabled'] === '1')
@@ -171,11 +227,30 @@ class DisplayFormInWPContent {
     }
 
     // generate security token
-    $templateData['token'] = Security::generateToken();
+    $templateData['token'] = $this->wp->wpCreateNonce('mailpoet_token');
 
     // add API version
     $templateData['api_version'] = API::CURRENT_VERSION;
     return $this->templateRenderer->render('form/front_end_form.html', $templateData);
+  }
+
+  /**
+   * Checks if the form should be displayed for current WordPress user
+   *
+   * @param FormEntity $form The form to check
+   * @param string $formType Display type of the current form, from self::TYPES
+   * @return bool False if form can be dismissed and user is subscribed to any of the form's lists
+   */
+  private function shouldDisplayFormForWPUser(FormEntity $form, string $formType): bool {
+    if (!in_array($formType, self::WITH_COOKIE_TYPES, true)) return true;
+
+    $subscriber = $this->subscribersRepository->getCurrentWPUser();
+    if (!$subscriber) return true;
+
+    if ($this->subscriberSubscribeController->isSubscribedToAnyFormSegments($form, $subscriber)) {
+      return false;
+    }
+    return true;
   }
 
   private function shouldDisplayFormType(FormEntity $form, string $formType): bool {
@@ -193,6 +268,8 @@ class DisplayFormInWPContent {
       return false;
     }
 
+    if (!$this->shouldDisplayFormForWPUser($form, $formType)) return false;
+
     if ($this->wp->isSingular($this->wp->applyFilters('mailpoet_display_form_supported_post_types', self::SUPPORTED_POST_TYPES))) {
       if ($this->shouldDisplayFormOnPost($setup, 'posts')) return true;
       if ($this->shouldDisplayFormOnCategory($setup)) return true;
@@ -203,17 +280,23 @@ class DisplayFormInWPContent {
       return true;
     }
 
+    if ($this->displayFormInProductListPage()) {
+      // Allow form display on Woo Shop listing page
+      if (is_null($this->wooShopPageId)) return false;
+      if ($this->shouldDisplayFormOnPost($setup, 'pages', $this->wooShopPageId)) return true;
+    }
+
     return false;
   }
 
-  private function shouldDisplayFormOnPost(array $setup, string $postsKey): bool {
+  private function shouldDisplayFormOnPost(array $setup, string $postsKey, $postId = null): bool {
     if (!isset($setup[$postsKey])) {
       return false;
     }
     if (isset($setup[$postsKey]['all']) && $setup[$postsKey]['all'] === '1') {
       return true;
     }
-    $post = $this->wp->getPost(null, ARRAY_A);
+    $post = $this->wp->getPost($postId, ARRAY_A);
     if (isset($setup[$postsKey]['selected']) && in_array($post['ID'], $setup[$postsKey]['selected'])) {
       return true;
     }

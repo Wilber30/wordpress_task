@@ -1,8 +1,6 @@
 <?php
 /**
  * Holds the main plugin class.
- *
- * @package WP_Widget_Disable
  */
 
 /**
@@ -12,7 +10,7 @@ class WP_Widget_Disable {
 	/**
 	 * Plugin version.
 	 */
-	const VERSION = '2.0.0';
+	const VERSION = '2.1.0';
 
 	/**
 	 * Sidebar widgets option key.
@@ -241,7 +239,6 @@ class WP_Widget_Disable {
 	 * @since 1.0.0
 	 *
 	 * @param array $links Plugin action links.
-	 *
 	 * @return array
 	 */
 	public function plugin_action_links( array $links ) {
@@ -446,7 +443,6 @@ class WP_Widget_Disable {
 	 * @since 1.0.0
 	 *
 	 * @param array $input Sidebar widgets to disable.
-	 *
 	 * @return array
 	 */
 	public function sanitize_sidebar_widgets( $input ) {
@@ -507,7 +503,6 @@ class WP_Widget_Disable {
 	 * @since 1.0.0
 	 *
 	 * @param array $input Dashboards widgets to disable.
-	 *
 	 * @return array
 	 */
 	public function sanitize_dashboard_widgets( $input ) {
@@ -637,9 +632,15 @@ class WP_Widget_Disable {
 			return;
 		}
 
-		$options = (array) get_option( $this->sidebar_widgets_option, [] );
+		$options                  = (array) get_option( $this->sidebar_widgets_option, [] );
+		$widgets_to_hide          = $this->get_widgets_to_hide_from_legacy_widget_block();
+		$use_widgets_block_editor = $this->use_widgets_block_editor();
 
 		foreach ( $widgets as $id => $widget_object ) {
+			// Hide widgets if widgets block is enabled.
+			if ( $use_widgets_block_editor && in_array( $widget_object->id_base, $widgets_to_hide, true ) ) {
+				continue;
+			}
 			printf(
 				'<p><input type="checkbox" id="%1$s" name="%2$s" value="disabled" %3$s> <label for="%1$s">%4$s</label></p>',
 				esc_attr( $id ),
@@ -795,5 +796,29 @@ class WP_Widget_Disable {
 			<button type="button" class="button-link" id="wp_widget_disable_deselect_all"><?php _e( 'Deselect all', 'wp-widget-disable' ); ?></button>
 		</p>
 		<?php
+	}
+
+	/**
+	 * Check if block editor is enabled for widgets.
+	 *
+	 * @return bool
+	 */
+	public function use_widgets_block_editor() {
+		if ( function_exists( 'wp_use_widgets_block_editor' ) ) {
+			return wp_use_widgets_block_editor();
+		}
+		return false;
+	}
+
+	/**
+	 * Get list of widgets to hide from legacy widget block.
+	 *
+	 * @return array
+	 */
+	public function get_widgets_to_hide_from_legacy_widget_block() {
+		if ( function_exists( 'get_legacy_widget_block_editor_settings' ) ) {
+			return get_legacy_widget_block_editor_settings()['widgetTypesToHideFromLegacyWidgetBlock'];
+		}
+		return [];
 	}
 }

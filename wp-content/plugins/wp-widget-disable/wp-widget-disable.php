@@ -1,15 +1,17 @@
 <?php
 /**
- * Plugin Name: Widget Disable
- * Plugin URI:  https://required.com/services/wordpress-plugins/wp-widget-disable/
- * Description: Disable sidebar and dashboard widgets with an easy to use interface. Simply use the checkboxes provided under <strong>Appearance -> Disable Widgets</strong> and select the widgets you'd like to hide.
- * Version:     2.0.0
- * Author:      required
- * Author URI:  https://required.com
- * License:     GPLv2+
- * Text Domain: wp-widget-disable
+ * Plugin Name:       Widget Disable
+ * Plugin URI:        https://required.com/services/wordpress-plugins/wp-widget-disable/
+ * Description:       Disable sidebar and dashboard widgets with an easy to use interface. Simply use the checkboxes provided under <strong>Appearance -> Disable Widgets</strong> and select the widgets you'd like to hide.
+ * Version:           3.0.0
+ * Requires at least: 6.0
+ * Requires PHP:      7.4
+ * Author:            required
+ * Author URI:        https://required.com
+ * License:           GPLv2+
+ * Text Domain:       wp-widget-disable
  *
- * Copyright (c) 2015-2020 required (email: support@required.ch)
+ * Copyright (c) 2015-2023 required (email: support@required.ch)
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License, version 2 or, at
@@ -24,8 +26,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
- *
- * @package WP_Widget_Disable
  */
 
 // phpcs:disable Generic.Arrays.DisallowLongArraySyntax -- File needs to be parsable by PHP 5.2.4.
@@ -38,8 +38,8 @@ if ( file_exists( dirname( __FILE__ ) . '/vendor/autoload.php' ) ) {
 $requirements_check = new WP_Requirements_Check(
 	array(
 		'title' => 'WP Widget Disable',
-		'php'   => '5.4',
-		'wp'    => '4.0',
+		'php'   => '7.4',
+		'wp'    => '6.0',
 		'file'  => __FILE__,
 	)
 );

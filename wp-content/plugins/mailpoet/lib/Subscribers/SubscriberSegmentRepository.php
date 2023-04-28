@@ -1,4 +1,4 @@
-<?php
+<?php // phpcs:ignore SlevomatCodingStandard.TypeHints.DeclareStrictTypes.DeclareStrictTypesMissing
 
 namespace MailPoet\Subscribers;
 
@@ -9,12 +9,25 @@ use MailPoet\Doctrine\Repository;
 use MailPoet\Entities\SegmentEntity;
 use MailPoet\Entities\SubscriberEntity;
 use MailPoet\Entities\SubscriberSegmentEntity;
+use MailPoet\WP\Functions as WPFunctions;
+use MailPoetVendor\Doctrine\ORM\EntityManager;
 use MailPoetVendor\Doctrine\ORM\Query\Expr\Join;
 
 /**
  * @extends Repository<SubscriberSegmentEntity>
  */
 class SubscriberSegmentRepository extends Repository {
+  /** @var WPFunctions */
+  private $wp;
+
+  public function __construct(
+    EntityManager $entityManager,
+    WPFunctions $wp
+  ) {
+    parent::__construct($entityManager);
+    $this->wp = $wp;
+  }
+
   protected function getEntityClassName() {
     return SubscriberSegmentEntity::class;
   }
@@ -78,15 +91,23 @@ class SubscriberSegmentRepository extends Repository {
   /**
    * @param SegmentEntity[] $segments
    */
-  public function subscribeToSegments(SubscriberEntity $subscriber, array $segments): void {
+  public function subscribeToSegments(SubscriberEntity $subscriber, array $segments, bool $skipHooks = false): void {
     foreach ($segments as $segment) {
-      $this->createOrUpdate($subscriber, $segment, SubscriberEntity::STATUS_SUBSCRIBED);
+      $this->createOrUpdate($subscriber, $segment, SubscriberEntity::STATUS_SUBSCRIBED, $skipHooks);
     }
   }
 
-  public function createOrUpdate(SubscriberEntity $subscriber, SegmentEntity $segment, string $status): SubscriberSegmentEntity {
+  public function createOrUpdate(
+    SubscriberEntity $subscriber,
+    SegmentEntity $segment,
+    string $status,
+    bool $skipHooks = false
+  ): SubscriberSegmentEntity {
     $subscriberSegment = $this->findOneBy(['segment' => $segment, 'subscriber' => $subscriber]);
+
+    $oldStatus = null;
     if ($subscriberSegment instanceof SubscriberSegmentEntity) {
+      $oldStatus = $subscriberSegment->getStatus();
       $subscriberSegment->setStatus($status);
     } else {
       $subscriberSegment = new SubscriberSegmentEntity($segment, $subscriber, $status);
@@ -94,6 +115,17 @@ class SubscriberSegmentRepository extends Repository {
       $this->entityManager->persist($subscriberSegment);
     }
     $this->entityManager->flush();
+
+    // fire subscribed hook for new subscriptions
+    if (
+      !$skipHooks
+      && $subscriber->getStatus() === SubscriberEntity::STATUS_SUBSCRIBED
+      && $subscriberSegment->getStatus() === SubscriberEntity::STATUS_SUBSCRIBED
+      && $oldStatus !== SubscriberEntity::STATUS_SUBSCRIBED
+    ) {
+      $this->wp->doAction('mailpoet_segment_subscribed', $subscriberSegment);
+    }
+
     return $subscriberSegment;
   }
 }

@@ -10,10 +10,7 @@ if (!is_null($analyst_cache) && isset($analyst_cache["plugin_to_install"])) {
 
 <div class="tab9">
 
-
-
 	<ul class="sfsi_icn_listing8">
-
 
 		<span id="sfsi_analyst_pop" style="display:none" data-status="<?php echo $sfsi_willshow_analyst_popup ? "yes" : "no"; ?>"></span>
 
@@ -129,8 +126,6 @@ if (!is_null($analyst_cache) && isset($analyst_cache["plugin_to_install"])) {
 
 	<?php sfsi_ask_for_help(9); ?>
 
-
-
 	<!-- SAVE BUTTON SECTION   -->
 
 	<div class="save_button">
@@ -147,15 +142,11 @@ if (!is_null($analyst_cache) && isset($analyst_cache["plugin_to_install"])) {
 
 	<!-- END SAVE BUTTON SECTION   -->
 
-
-
 	<a class="sfsiColbtn closeSec" href="javascript:;"><?php _e("Collapse area",'ultimate-social-media-icons') ?>
 
 	</a>
 
 	<label class="closeSec"></label>
-
-
 
 	<!-- ERROR AND SUCCESS MESSAGE AREA-->
 
@@ -164,22 +155,4 @@ if (!is_null($analyst_cache) && isset($analyst_cache["plugin_to_install"])) {
 	<p class="green_txt sucMsg" style="display:none"> </p>
 
 	<div class="clear"></div>
-
-
-
 </div>
-
-<?php
-
-function sfsi_premium_isSeletcted($givenVal, $value)
-
-{
-
-	if ($givenVal == $value)
-
-		return 'selected="true"';
-
-	else
-
-		return '';
-}

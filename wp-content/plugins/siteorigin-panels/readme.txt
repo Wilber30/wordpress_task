@@ -1,10 +1,10 @@
 === Page Builder by SiteOrigin ===
 Tags: page builder, responsive, parallax, widgets, blocks, gallery, layout, grid, cms, builder, widget
 Requires at least: 4.7
-Tested up to: 5.9
+Tested up to: 6.2
 Requires PHP: 5.6.20
-Stable tag: 2.16.4
-Build time: 2022-02-19T17:04:43+02:00
+Stable tag: 2.21.1
+Build time: 2023-04-25T22:04:48+01:00
 License: GPLv3
 License URI: http://www.gnu.org/licenses/gpl.html
 Donate link: https://siteorigin.com/downloads/premium/
@@ -106,6 +106,135 @@ We've tried to ensure that Page Builder is compatible with most plugin widgets. 
 SiteOrigin Premium includes access to our professional email support service, perfect for those times when you need fast and effective technical support. We're standing by to assist you in any way we can.
 
 == Changelog ==
+
+= 2.21.1 - 25 April 2023 =
+* Prevented potential new page JavaScript error.
+
+= 2.21.0 - 22 April 2023 =
+* Added an Inline Styles setting at `Settings > Page Builder > Layout`. Supports margin, border, and padding.
+* Classic Editor: Improved preview markup handling.
+* Rank Math: Removed `wp_targeted_link_rel` from sitemap compatibility.
+* SEO: Removed widget class requirement.
+* Added Cross Domain Copy Paste support.
+* PHP coding standards update.
+
+= 2.20.6 - 30 March 2023 =
+* Updated Tested up to tag.
+
+= 2.20.5 - 04 March 2023 =
+* Excluded some WooCommerce post types from the Page Builder Post Types list.
+* Sidebar Emulator: Resolved `Undefined array key "option_name"` warning.
+* Removed preview content if `Copy Content` is disabled.
+* Developer: Added `siteorigin_panels_add_preview_content` filter.
+* Developer: Added `siteorigin_panels_layout_tabs` filter.
+
+= 2.20.4 - 16 January 2023 =
+* Prevented potential "Are you sure you want to navigate away." notice.
+* Customizer Widgets Block Editor: Fixed Layout Block styling.
+* Layouts Directory: Allowed layouts to be named "0".
+* Modern Parallax Sliders: Prevented a potential mobile display issue.
+* Developer: Prevented `$layout_data` loading if already set.
+
+= 2.20.3 - 29 December 2022 =
+* Reverted: Prevented `$layout_data` loading if already set.
+
+= 2.20.2 - 29 December 2022 =
+* Styles: Improved `Background Image Display` and `Size` settings conditional display behavior.
+* Classic Editor: Prevented potential notice when opening a saved widget.
+* Developer: Prevented `$layout_data` loading if already set.
+* Developer: Added custom style field type support via `siteorigin_panels_style_field_*`, and `siteorigin_panels_style_field_sanitize_*`.
+
+= 2.20.1 - 09 December 2022 =
+* Darkened default cell admin background color.
+* Removed `@font-face` query string.
+* Altered `siteorigin_panels_url` to better allow different directory names.
+
+= 2.20.0 - 02 December 2022 =
+* Styles: Added a row, cell, and widget `Border Thickness` setting.
+* Parallax: Resolved `Disable Parallax On Mobile` setting bug.
+
+= 2.19.0 - 22 November 2022 =
+* Styles: Added a row, cell, and widget `Background Image Size` setting.
+
+= 2.18.4 - 13 November 2022 =
+* Admin Row Colors: Adjusted swatches layout and spacing.
+
+= 2.18.3 - 09 November 2022 =
+* Styles: Added viewport units of measurement.
+* Updated `Tested up to` tag to 6.1.
+
+= 2.18.2 - 26 October 2022 =
+* Restored row re-ordering functionality.
+
+= 2.18.1 - 25 October 2022 =
+* Restored admin row background functionality.
+* Developer: Added `siteorigin_panels_admin_row_colors_default` to set the default admin row background color.
+
+= 2.18.0 - 22 October 2022 =
+* Box Shadow: Added a new `Inset` setting. Inset box shadows appear inside the row, cell, or widget.
+* Media Modal: Updated the title to `Choose Media`.
+* Developer: Added `siteorigin_panels_admin_row_colors` filter.
+* Developer: Added a client side event to allow for widget validation.
+* Developer: Accounted for a situation where `$panels_data` is passed as a string containing JSON rather than an array.
+
+= 2.17.0 - 28 August 2022 =
+* Row, Cell, and Widget Design Settings: Added Border Radius and Box Shadow settings.
+
+= 2.16.19 - 16 August 2022 =
+* Resolved `Uncaught TypeError` Customizer Layout Builder console error.
+
+= 2.16.18 - 10 August 2022 =
+* Easy Digital Downloads: Resolved `Add New` button error.
+* Resolved a Customizer Layout Builder widget sizing issue.
+* Improved `style` tag HTML validation.
+* Resolved a potential Panels preview PHP 8.3 type error.
+
+= 2.16.17 - 19 July 2022 =
+* Restored Cell `Link Color` and `Link Hover Color` settings.
+* Gravity Forms: Added additional check to prevent an unrelated notice.
+* Jetpack: Added Copy Post module support.
+
+= 2.16.16 - 09 July 2022 =
+* Legacy Layout Engine: Resolved `Undefined index: cell_index` notice.
+
+= 2.16.15 - 27 June 2022 =
+* Resolved edge case empty widgets warning.
+
+= 2.16.14 - 19 June 2022 =
+* Layout Block: Limited block preview attempts.
+* Modern Parallax: Resolved potential choppy scrolling.
+
+= 2.16.13 - 25 May 2022 =
+* Updated WordPress `Tested up to` tag.
+* Minor PHP formatting improvements.
+
+= 2.16.12 - 22 May 2022 =
+* Layout Block: Resolved WP 6.0 styling conflict.
+* WP Version Check: Update to check for version body class instead of branch.
+
+= 2.16.11 - 18 April 2022 =
+* Widget Descriptions: Resolved a potential error with old SiteOrigin Image Widgets title value set to `false` rather than `null`.
+
+= 2.16.10 - 13 April 2022 =
+* Block-Based Widgets Editor: Restored SiteOrigin Layout Block compatibility and other improvements.
+
+= 2.16.9 - 07 April 2022 =
+* Layout Block: Fixed JSON layout export file name.
+* Developer: Passed `postId` to server when rendering widget form.
+
+= 2.16.8 - 30 March 2022 =
+* Improved PHP 8 Compatibility: Replaced `GLOB_BRACE` flag in favor of multiple `glob` functions.
+* Developer: Added `siteorigin_panels_output_row` and `siteorigin_panels_output_widget` filters.
+
+= 2.16.7 - 23 March 2022 =
+* Improved empty CSS rule check to avoid potential edge cases.
+
+= 2.16.6 - 21 March 2022 =
+* Prevented CSS properties outputting with only `px` set as the value.
+* WPML: Refined sidebar emulator language path removal.
+
+= 2.16.5 - 06 March 2022 =
+* Full-Width Containers Using CSS: Ensured full-width global CSS is only output once.
 
 = 2.16.4 - 19 February 2022 =
 * Full-Width Containers Using CSS: Restored normal functionality when Standard or Full-Width rows not present.

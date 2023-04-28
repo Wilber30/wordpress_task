@@ -6,7 +6,7 @@
  * Description: The highly customizable Lightbox for native WordPress Gallery/Image. And beautiful gallery blocks with advanced Lightbox for photographers, video creators, writers and content marketers. This blocks set will help you create responsive Images, Video, Audio gallery. Three desired layout in one plugin - Masonry, Justified and Grid.
  * Author: GalleryCreator
  * Author URI: https://blockslib.com/
- * Version: 2.3.5
+ * Version: 3.1.2
  * Text Domain: simply-gallery-block
  * Domain Path: /languages
  * License: GPL2+
@@ -24,7 +24,7 @@ if ( !defined( 'ABSPATH' ) ) {
 if ( function_exists( 'pgc_sgb_fs' ) ) {
     pgc_sgb_fs()->set_basename( false, __FILE__ );
 } else {
-    define( 'PGC_SGB_VERSION', '2.3.5' );
+    define( 'PGC_SGB_VERSION', '3.1.2' );
     define( 'PGC_SGB_SLUG', 'simply-gallery-block' );
     define( 'PGC_SGB_BLOCK_PREF', 'wp-block-pgcsimplygalleryblock-' );
     define( 'PGC_SGB_PLUGIN_SLUG', 'pgc-simply-gallery-plugin' );
@@ -32,7 +32,6 @@ if ( function_exists( 'pgc_sgb_fs' ) ) {
     define( 'PGC_SGB_TAXONOMY', 'pgc_simply_category' );
     define( 'PGC_SGB_FILE', __FILE__ );
     define( 'PGC_SGB_PATH', __DIR__ );
-    define( 'PGC_SGB_URL', plugin_dir_url( __FILE__ ) );
     define( 'PGC_SGB_DIRNAME', basename( PGC_SGB_PATH ) );
     $pgc_sgb_skins_list = array();
     $pgc_sgb_skins_presets = array();
@@ -87,7 +86,8 @@ if ( function_exists( 'pgc_sgb_fs' ) ) {
     pgc_sgb_fs()->add_action( 'after_uninstall', 'pgc_sgb_fs_uninstall_cleanup' );
     function pgc_sgb_load_textdomain()
     {
-        load_plugin_textdomain( 'simply-gallery-block', false, basename( PGC_SGB_URL ) . 'languages' );
+        define( 'PGC_SGB_URL', plugin_dir_url( __FILE__ ) );
+        load_plugin_textdomain( 'simply-gallery-block', false, basename( PGC_SGB_URL ) . '/languages' );
     }
     
     add_action( 'plugins_loaded', 'pgc_sgb_load_textdomain' );
@@ -351,37 +351,157 @@ if ( function_exists( 'pgc_sgb_fs' ) ) {
         return $res;
     }
     
+    function pgc_sgb_can_write_direct( $path )
+    {
+        require_once ABSPATH . 'wp-admin/includes/file.php';
+        
+        if ( get_filesystem_method( array(), $path, true ) === 'direct' ) {
+            $creds = request_filesystem_credentials(
+                site_url() . '/wp-admin/',
+                '',
+                false,
+                false,
+                array()
+            );
+            if ( !WP_Filesystem( $creds ) ) {
+                return false;
+            }
+            return true;
+        }
+        
+        return false;
+    }
+    
     function pgc_sgb_action_wizard()
     {
         global  $post, $pgc_sgb_wc_to_sgb ;
         check_ajax_referer( 'pgc-sgb-nonce', 'nonce' );
         $globaldata = sanitize_text_field( stripslashes( $_POST['props'] ) );
-        $json = json_decode( $globaldata );
+        $json = json_decode( $globaldata, true );
         $out = array();
         $out['message'] = array();
         $data = array();
-        switch ( $json->type ) {
+        switch ( $json['type'] ) {
+            case 'create_post_thumbnail':
+                
+                if ( current_user_can( 'add_post_meta', intval( $json['postId'] ) ) ) {
+                    $videoName = sanitize_text_field( wp_unslash( $json['name'] ) );
+                    $imgData = wp_unslash( $_POST['thumb_raw_data'] );
+                    
+                    if ( isset( $imgData ) ) {
+                        $uploadsDir = wp_upload_dir();
+                        $posterName = $videoName . '_poster';
+                        wp_mkdir_p( $uploadsDir['path'] . '/poster_tmp' );
+                        $tmpPosterPath = $uploadsDir['path'] . '/poster_tmp/' . $posterName . '.jpg';
+                        $raw_png = str_replace( 'data:image/png;base64,', '', $imgData );
+                        $raw_png = str_replace( 'data:image/jpeg;base64,', '', $imgData );
+                        $raw_png = str_replace( ' ', '+', $raw_png );
+                        $decoded_png = base64_decode( $raw_png );
+                        
+                        if ( pgc_sgb_can_write_direct( dirname( $tmpPosterPath ) ) ) {
+                            global  $wp_filesystem ;
+                            $success = $wp_filesystem->put_contents( $tmpPosterPath, $decoded_png );
+                            
+                            if ( $success ) {
+                                $file = array(
+                                    'name'     => $posterName . '.jpg',
+                                    'type'     => mime_content_type( $tmpPosterPath ),
+                                    'tmp_name' => $tmpPosterPath,
+                                    'size'     => filesize( $tmpPosterPath ),
+                                );
+                                $sideload = wp_handle_sideload( $file, array(
+                                    'test_form' => false,
+                                ) );
+                                
+                                if ( !empty($sideload['error']) ) {
+                                    $out['message']['poster'] = 'false';
+                                    $out['message']['error'] = $sideload;
+                                } else {
+                                    $attachment_id = wp_insert_attachment( array(
+                                        'guid'           => $sideload['url'],
+                                        'post_mime_type' => $sideload['type'],
+                                        'post_title'     => preg_replace( '/\\.[^.]+$/', '', basename( $sideload['file'] ) ),
+                                        'post_content'   => '',
+                                        'post_status'    => 'inherit',
+                                    ), $sideload['file'] );
+                                    
+                                    if ( is_wp_error( $attachment_id ) || !$attachment_id ) {
+                                        $out['message']['poster'] = 'false';
+                                        $out['message']['error'] = 'Error: insert attachment';
+                                    } else {
+                                        require_once ABSPATH . 'wp-admin/includes/image.php';
+                                        $meta_data = wp_generate_attachment_metadata( $attachment_id, $sideload['file'] );
+                                        wp_update_attachment_metadata( $attachment_id, $meta_data );
+                                        $wp_filesystem->delete( $tmpPosterPath );
+                                        $out['message']['metaData'] = $meta_data;
+                                        $out['message']['sideload'] = $sideload;
+                                        $out['message']['posterId'] = $attachment_id;
+                                        $out['message']['poster'] = set_post_thumbnail( intval( $json['postId'] ), $attachment_id );
+                                    }
+                                
+                                }
+                            
+                            } else {
+                                $out['message']['poster'] = 'false';
+                                $out['message']['error'] = 'Error: temp file';
+                            }
+                        
+                        }
+                    
+                    } else {
+                        $out['message']['poster'] = 'false';
+                        $out['message']['error'] = 'Error: Image data';
+                    }
+                
+                }
+                
+                break;
+            case 'update_post_thumbnail':
+                if ( current_user_can( 'add_post_meta', intval( $json['postId'] ) ) ) {
+                    
+                    if ( intval( $json['value'] ) === 0 ) {
+                        $out['message'][$json['key']] = delete_post_thumbnail( intval( $json['postId'] ) );
+                    } else {
+                        $out['message'][$json['key']] = set_post_thumbnail( intval( $json['postId'] ), intval( $json['value'] ) );
+                    }
+                
+                }
+                break;
             case 'update_post_meta':
-                $out['message'][$json->key] = update_post_meta( $json->postId, $json->key, $json->value );
+                if ( current_user_can( 'add_post_meta', intval( $json['postId'] ) ) ) {
+                    $out['message'][$json['key']] = update_post_meta( $json['postId'], $json['key'], $json['value'] );
+                }
                 break;
             case 'add_posts_meta':
-                $tagsArr = $json->value;
-                $postIDs = $json->postIDs;
-                $key = $json->key;
+                $tagsArr = $json['value'];
+                $postIDs = $json['postIDs'];
+                $key = $json['key'];
                 
                 if ( isset( $tagsArr ) && isset( $postIDs ) && isset( $key ) && $key === 'pgc_sgb_tag' ) {
-                    $out['message'][$json->key] = true;
+                    $out['message'][$json['key']] = true;
                     foreach ( $postIDs as $postId ) {
-                        $itemTags = get_post_meta( $postId, 'pgc_sgb_tag' );
-                        foreach ( $tagsArr as $val ) {
-                            
-                            if ( $val !== '' ) {
-                                if ( !isset( $data[$postId] ) ) {
-                                    $data[$postId] = array();
-                                }
+                        
+                        if ( current_user_can( 'add_post_meta', intval( $postId ) ) ) {
+                            $itemTags = get_post_meta( $postId, 'pgc_sgb_tag' );
+                            foreach ( $tagsArr as $val ) {
                                 
-                                if ( !empty($itemTags) ) {
-                                    if ( array_search( $val, $itemTags ) === false ) {
+                                if ( $val !== '' ) {
+                                    if ( !isset( $data[$postId] ) ) {
+                                        $data[$postId] = array();
+                                    }
+                                    
+                                    if ( !empty($itemTags) ) {
+                                        if ( array_search( $val, $itemTags ) === false ) {
+                                            if ( add_post_meta(
+                                                $postId,
+                                                $key,
+                                                $val,
+                                                false
+                                            ) ) {
+                                                array_push( $data[$postId], $val );
+                                            }
+                                        }
+                                    } else {
                                         if ( add_post_meta(
                                             $postId,
                                             $key,
@@ -391,39 +511,33 @@ if ( function_exists( 'pgc_sgb_fs' ) ) {
                                             array_push( $data[$postId], $val );
                                         }
                                     }
-                                } else {
-                                    if ( add_post_meta(
-                                        $postId,
-                                        $key,
-                                        $val,
-                                        false
-                                    ) ) {
-                                        array_push( $data[$postId], $val );
-                                    }
+                                
                                 }
                             
                             }
-                        
                         }
+                        
+                        $out['message']['tags_list'] = pgc_sgb_update_tags_list( $tagsArr );
                     }
-                    $out['message']['tags_list'] = pgc_sgb_update_tags_list( $tagsArr );
                 }
                 
                 break;
             case 'delete_posts_meta':
-                $tagsArr = $json->value;
-                $postIDs = $json->postIDs;
-                $key = $json->key;
+                $tagsArr = $json['value'];
+                $postIDs = $json['postIDs'];
+                $key = $json['key'];
                 
                 if ( isset( $tagsArr ) && isset( $postIDs ) && isset( $key ) && $key === 'pgc_sgb_tag' ) {
-                    $out['message'][$json->key] = true;
+                    $out['message'][$json['key']] = true;
                     foreach ( $postIDs as $postId ) {
-                        foreach ( $tagsArr as $val ) {
-                            if ( !isset( $data[$postId] ) ) {
-                                $data[$postId] = array();
-                            }
-                            if ( delete_post_meta( $postId, $json->key, $val ) ) {
-                                array_push( $data[$postId], $val );
+                        if ( current_user_can( 'delete_post_meta', intval( $postId ) ) ) {
+                            foreach ( $tagsArr as $val ) {
+                                if ( !isset( $data[$postId] ) ) {
+                                    $data[$postId] = array();
+                                }
+                                if ( delete_post_meta( $postId, $json['key'], $val ) ) {
+                                    array_push( $data[$postId], $val );
+                                }
                             }
                         }
                     }
@@ -431,7 +545,7 @@ if ( function_exists( 'pgc_sgb_fs' ) ) {
                 
                 break;
             case 'get_attachments_for_admin':
-                $query = ( property_exists( $json, 'query' ) ? $json->query : null );
+                $query = ( array_key_exists( 'query', $json ) ? $json['query'] : null );
                 
                 if ( !current_user_can( 'upload_files' ) || !$query ) {
                     $out['message']['success'] = false;
@@ -446,12 +560,23 @@ if ( function_exists( 'pgc_sgb_fs' ) ) {
                         'paged'          => 1,
                     );
                     
-                    if ( isset( $query->tax_query ) ) {
+                    if ( isset( $query['tax_query'] ) ) {
                         $tax_query = array();
-                        foreach ( $query->tax_query as $tax ) {
+                        foreach ( $query['tax_query'] as $tax ) {
                             array_push( $tax_query, (array) $tax );
                         }
-                        $query->tax_query = $tax_query;
+                        $query['tax_query'] = $tax_query;
+                    }
+                    
+                    
+                    if ( isset( $query['meta_query'] ) ) {
+                        $meta_query = array(
+                            'relation' => 'OR',
+                        );
+                        foreach ( $query['meta_query'] as $meta ) {
+                            array_push( $meta_query, (array) $meta );
+                        }
+                        $query['meta_query'] = $meta_query;
                     }
                     
                     $query = array_merge( $q_args, (array) $query );
@@ -489,46 +614,64 @@ if ( function_exists( 'pgc_sgb_fs' ) ) {
                 wp_reset_query();
                 break;
             case 'get_attachments_metadata':
-                foreach ( $json->iDs as $i => $value ) {
-                    $data[$json->iDs[$i]] = wp_get_attachment_metadata( $json->iDs[$i], true );
+                foreach ( $json['iDs'] as $i => $value ) {
+                    if ( current_user_can( 'read_post', intval( $json['iDs'][$i] ) ) ) {
+                        $data[$json['iDs'][$i]] = wp_get_attachment_metadata( $json['iDs'][$i], true );
+                    }
                 }
                 break;
             case 'get_posts_metadata':
-                foreach ( $json->iDs as $i => $value ) {
-                    $main_meta = get_post_meta( $json->iDs[$i], ( $json->key ? $json->key : '' ), true );
-                    $tags = get_post_meta( $json->iDs[$i], 'pgc_sgb_tag' );
+                foreach ( $json['iDs'] as $i => $value ) {
                     
-                    if ( !$main_meta || !empty($main_meta) ) {
-                        $main_meta = json_decode( $main_meta, true );
-                    } else {
-                        $main_meta = array();
+                    if ( current_user_can( 'read_post', intval( $json['iDs'][$i] ) ) ) {
+                        $main_meta = get_post_meta( $json['iDs'][$i], ( $json['key'] ? $json['key'] : '' ), true );
+                        $tags = get_post_meta( $json['iDs'][$i], 'pgc_sgb_tag' );
+                        
+                        if ( !$main_meta || !empty($main_meta) ) {
+                            $main_meta = json_decode( $main_meta, true );
+                        } else {
+                            $main_meta = array();
+                        }
+                        
+                        if ( $tags || !empty($main_meta) ) {
+                            $main_meta['tags'] = $tags;
+                        }
+                        if ( !empty($main_meta) ) {
+                            $data[$json['iDs'][$i]] = json_encode( $main_meta );
+                        }
                     }
-                    
-                    if ( $tags || !empty($main_meta) ) {
-                        $main_meta['tags'] = $tags;
-                    }
-                    if ( !empty($main_meta) ) {
-                        $data[$json->iDs[$i]] = json_encode( $main_meta );
-                    }
+                
                 }
                 break;
             case 'update_tags_list':
-                $value = $json->value;
-                $out['message'][$json->key] = true;
-                $out['message']['tags_list'] = pgc_sgb_update_tags_list( $value, ( $json->action === 'delete' ? true : NULL ) );
+                $value = $json['value'];
+                
+                if ( current_user_can( 'edit_posts' ) ) {
+                    $out['message'][$json['key']] = true;
+                    $out['message']['tags_list'] = pgc_sgb_update_tags_list( $value, ( $json['action'] === 'delete' ? true : NULL ) );
+                }
+                
                 break;
             case 'update_option':
-                foreach ( $json->options as $key => $value ) {
-                    $out['message'][$key] = update_option( $key, $value );
+                if ( current_user_can( 'edit_posts' ) ) {
+                    foreach ( $json['options'] as $key => $value ) {
+                        if ( strpos( $key, 'pgc_sgb' ) === 0 ) {
+                            $out['message'][$key] = update_option( $key, $value );
+                        }
+                    }
                 }
                 break;
             case 'get_option':
-                foreach ( $json->options as $key => $value ) {
-                    $out['message'][$key] = get_option( $key );
+                if ( current_user_can( 'edit_posts' ) ) {
+                    foreach ( $json['options'] as $key => $value ) {
+                        if ( strpos( $key, 'pgc_sgb' ) === 0 ) {
+                            $out['message'][$key] = get_option( $key );
+                        }
+                    }
                 }
                 break;
             case 'get_categories_by_taxonomy':
-                $taxonomy = $json->taxonomy;
+                $taxonomy = $json['taxonomy'];
                 $categories = get_categories( [
                     'taxonomy'   => $taxonomy,
                     'hide_empty' => 1,
@@ -547,9 +690,9 @@ if ( function_exists( 'pgc_sgb_fs' ) ) {
                 break;
             case 'get_posts_by_type':
                 $my_query = null;
-                $postType = $json->postType;
-                $extended = ( property_exists( $json, 'extended' ) ? true : false );
-                $term_id = ( property_exists( $json, 'term_id' ) ? $json->term_id : null );
+                $postType = $json['postType'];
+                $extended = ( array_key_exists( 'extended', $json ) ? true : false );
+                $term_id = ( isset( $json['term_id'] ) ? $json['term_id'] : null );
                 $q_args = [
                     'post_type'      => $postType,
                     'post_status'    => 'publish',
@@ -572,62 +715,70 @@ if ( function_exists( 'pgc_sgb_fs' ) ) {
                         $postData['title'] = ( $post->post_title !== '' ? $post->post_title : $post->ID );
                         $postData['ID'] = $post->ID;
                         
-                        if ( $extended ) {
-                            $postData['id'] = $post->ID;
-                            $postData['modified'] = $post->post_modified;
-                            $postData['date'] = $post->post_date;
-                            $postData['postLink'] = get_post_permalink( $post->ID );
-                            $postData['type'] = $post->post_type;
-                            $postData['slug'] = $post->post_name;
-                        }
-                        
-                        
-                        if ( has_post_thumbnail( $post ) ) {
-                            $postData['thumbURL'] = get_the_post_thumbnail_url( $post, 'thumbnail' );
+                        if ( current_user_can( 'read_post', intval( $postData['ID'] ) ) ) {
                             
                             if ( $extended ) {
-                                $thumbId = get_post_thumbnail_id( $post );
+                                $postData['id'] = $post->ID;
+                                $postData['modified'] = $post->post_modified;
+                                $postData['date'] = $post->post_date;
+                                $postData['postLink'] = get_post_permalink( $post->ID );
+                                $postData['type'] = $post->post_type;
+                                $postData['slug'] = $post->post_name;
+                            }
+                            
+                            
+                            if ( has_post_thumbnail( $post ) ) {
+                                $postData['thumbURL'] = get_the_post_thumbnail_url( $post, 'thumbnail' );
                                 
-                                if ( $thumbId !== false ) {
-                                    $thumbPost = get_post( $thumbId );
-                                    $thumbData = wp_prepare_attachment_for_js( $thumbPost );
-                                    $postData['thumb'] = ( isset( $thumbData['sizes'] ) ? $thumbData['sizes'] : null );
+                                if ( $extended ) {
+                                    $thumbId = get_post_thumbnail_id( $post );
+                                    
+                                    if ( $thumbId !== false ) {
+                                        $thumbPost = get_post( $thumbId );
+                                        $thumbData = wp_prepare_attachment_for_js( $thumbPost );
+                                        $postData['thumb'] = ( isset( $thumbData['sizes'] ) ? $thumbData['sizes'] : null );
+                                    }
+                                
+                                }
+                            
+                            } else {
+                                
+                                if ( $extended ) {
+                                    $postData['thumbURL'] = PGC_SGB_URL . 'assets/coverAlbum-400x400.png';
+                                } else {
+                                    $postData['thumbURL'] = PGC_SGB_URL . 'assets/icon-150x150.png';
                                 }
                             
                             }
-                        
-                        } else {
                             
-                            if ( $extended ) {
-                                $postData['thumbURL'] = PGC_SGB_URL . 'assets/coverAlbum-400x400.png';
-                            } else {
-                                $postData['thumbURL'] = PGC_SGB_URL . 'assets/icon-150x150.png';
-                            }
-                        
+                            array_push( $data, $postData );
                         }
-                        
-                        array_push( $data, $postData );
+                    
                     }
                 }
                 
                 wp_reset_query();
                 break;
             case 'get_post_content':
-                $id = intval( $json->postID );
-                $postData = get_post_field( 'post_content', $id, 'display' );
-                $output = '';
+                $id = intval( $json['postID'] );
                 
-                if ( $postData !== '' || !is_wp_error( $postData ) ) {
-                    $blocks = parse_blocks( $postData );
-                    foreach ( $blocks as $block ) {
-                        $output .= render_block( $block );
+                if ( current_user_can( 'read_post', $id ) ) {
+                    $postData = get_post_field( 'post_content', $id, 'display' );
+                    $output = '';
+                    
+                    if ( $postData !== '' || !is_wp_error( $postData ) ) {
+                        $blocks = parse_blocks( $postData );
+                        foreach ( $blocks as $block ) {
+                            $output .= render_block( $block );
+                        }
                     }
+                    
+                    $data['raw'] = $output;
                 }
                 
-                $data['raw'] = $output;
                 break;
             case 'get_terms_for_taxonomy':
-                $taxonomyName = $json->name;
+                $taxonomyName = $json['name'];
                 $terms = get_terms( [
                     'taxonomy'   => $taxonomyName,
                     'hide_empty' => false,
@@ -636,41 +787,49 @@ if ( function_exists( 'pgc_sgb_fs' ) ) {
                 break;
             case 'deletePosts':
                 $p_arg = array(
-                    'post_type'   => $json->post_type,
+                    'post_type'   => $json['post_type'],
                     'post_status' => 'publish',
                 );
-                if ( isset( $json->name ) ) {
-                    $p_arg['name'] = $json->name;
+                if ( isset( $json['name'] ) ) {
+                    $p_arg['name'] = $json['name'];
                 }
                 $posts = get_posts( $p_arg );
                 if ( !empty($posts) ) {
                     foreach ( $posts as $dl_post ) {
-                        $postId = $dl_post->ID;
-                        $deleted = is_object( wp_delete_post( $postId ) );
-                        array_push( $data, array(
-                            $postId . '' => $deleted,
-                        ) );
+                        $postId = intval( $dl_post->ID );
+                        
+                        if ( current_user_can( 'delete_post', intval( $postId ) ) ) {
+                            $deleted = is_object( wp_delete_post( $postId ) );
+                            array_push( $data, array(
+                                $postId . '' => $deleted,
+                            ) );
+                        }
+                    
                     }
                 }
                 break;
             case 'get_products_for_admin':
                 
                 if ( isset( $pgc_sgb_wc_to_sgb ) ) {
-                    $query = ( property_exists( $json, 'query' ) ? $json->query : null );
+                    $query = ( array_key_exists( 'query', $json ) ? $json['query'] : null );
                     
-                    if ( isset( $query->naviHelper ) ) {
-                        $out['message']['naviHelper'] = $query->naviHelper;
-                        unset( $query->naviHelper );
+                    if ( isset( $query['naviHelper'] ) ) {
+                        $out['message']['naviHelper'] = $query['naviHelper'];
+                        unset( $query['naviHelper'] );
                     }
                     
                     $q_args = array();
+                    $q_args = array(
+                        'post_status' => 'publish',
+                        'perm'        => 'readable',
+                    );
                     
-                    if ( isset( $query->tax_query ) ) {
+                    if ( isset( $query['tax_query'] ) ) {
                         $tax_query = array();
-                        foreach ( $query->tax_query as $tax ) {
+                        foreach ( $query['tax_query'] as $tax ) {
                             array_push( $tax_query, (array) $tax );
                         }
-                        $query->tax_query = $tax_query;
+                        $query['tax_query'] = $tax_query;
                     }
                     
                     $query = array_merge( $q_args, (array) $query );

@@ -1,4 +1,4 @@
-<?php
+<?php // phpcs:ignore SlevomatCodingStandard.TypeHints.DeclareStrictTypes.DeclareStrictTypesMissing
 
 namespace MailPoet\Cron\Workers\SendingQueue\Tasks;
 
@@ -27,7 +27,7 @@ class Posts {
     if ($newsletter->getType() !== NewsletterEntity::TYPE_NOTIFICATION_HISTORY) {
       return false;
     }
-    $this->loggerFactory->getLogger(LoggerFactory::TOPIC_POST_NOTIFICATIONS)->addInfo(
+    $this->loggerFactory->getLogger(LoggerFactory::TOPIC_POST_NOTIFICATIONS)->info(
       'extract and save posts - before',
       ['newsletter_id' => $newsletter->getId()]
     );
@@ -41,7 +41,7 @@ class Posts {
     }
     $parent = $newsletter->getParent(); // parent post notification
     if (!$parent instanceof NewsletterEntity) {
-      $this->loggerFactory->getLogger(LoggerFactory::TOPIC_POST_NOTIFICATIONS)->addInfo(
+      $this->loggerFactory->getLogger(LoggerFactory::TOPIC_POST_NOTIFICATIONS)->info(
         'parent post has not been found',
         ['newsletter_id' => $newsletter->getId()]
       );
@@ -52,15 +52,15 @@ class Posts {
       $this->newsletterPostRepository->persist($newsletterPost);
     }
     $this->newsletterPostRepository->flush();
-    $this->loggerFactory->getLogger(LoggerFactory::TOPIC_POST_NOTIFICATIONS)->addInfo(
+    $this->loggerFactory->getLogger(LoggerFactory::TOPIC_POST_NOTIFICATIONS)->info(
       'extract and save posts - after',
       ['newsletter_id' => $newsletter->getId(), 'matched_posts_ids' => $matchedPostsIds]
     );
     return true;
   }
 
-  public function getAlcPostsCount($renderedNewsletter, \MailPoet\Models\Newsletter $newsletter) {
-    $templatePostsCount = substr_count($newsletter->getBodyString(), 'data-post-id');
+  public function getAlcPostsCount($renderedNewsletter, NewsletterEntity $newsletter) {
+    $templatePostsCount = substr_count($newsletter->getContent(), 'data-post-id');
     $newsletterPostsCount = substr_count($renderedNewsletter['html'], 'data-post-id');
     return $newsletterPostsCount - $templatePostsCount;
   }

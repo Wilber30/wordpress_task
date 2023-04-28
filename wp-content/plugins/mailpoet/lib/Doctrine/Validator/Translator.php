@@ -1,4 +1,4 @@
-<?php
+<?php // phpcs:ignore SlevomatCodingStandard.TypeHints.DeclareStrictTypes.DeclareStrictTypesMissing
 
 namespace MailPoet\Doctrine\Validator;
 
@@ -7,7 +7,7 @@ if (!defined('ABSPATH')) exit;
 
 use MailPoetVendor\Symfony\Contracts\Translation\TranslatorTrait;
 
-class Translator implements \MailPoetVendor\Symfony\Component\Translation\TranslatorInterface {
+class Translator implements \MailPoetVendor\Symfony\Contracts\Translation\TranslatorInterface {
 
   use TranslatorTrait;
 

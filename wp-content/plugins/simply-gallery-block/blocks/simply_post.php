@@ -112,14 +112,18 @@ function pgc_sgb_get_galleries($termId, $orderby, $order)
 }
 function pgc_sgb_amp_cover($item)
 {
+	$captionWrap = isset($item['title'])
+		? '<div class="sgb-item-caption"><em>' . $item['title'] . '</em></div>'
+		: '';
 	$itemElemant = '<div class="sgb-item" title="'
 		. esc_attr($item['title']) . '"><a href="'
 		. esc_url($item['postLink']) . '" target="_blank"><img alt="'
 		. esc_attr(isset($item['title']) ? $item['title'] : '')
-		. '" width="400'
-		. '" height="400'
-		. '" loading="auto" data-lazy-src="" class="skip-lazy no-lazyload noLazy" '
-		. 'src="' . $item['thumbURL'] . '"/></a></div>';
+		. '" width="250'
+		. '" height="250'
+		//. '" data-lazy-src="" class="skip-lazy no-lazyload noLazy" '
+		. '" loading="lazy" '
+		. 'src="' . $item['thumbURL'] . '"/></a>' . $captionWrap . '</div>';
 	return $itemElemant;
 }
 function pgc_sgb_noscript_covers($items)
@@ -157,6 +161,8 @@ function pgc_sgb_render_albums_blocks_callback($atr, $content)
 			} else {
 				$atr = array_merge($atr, (array)$skinGlobalOptions);
 			}
+			$orderby = isset($atr['orderBy']) ? $atr['orderBy'] : 'ID';
+			$order = isset($atr['order']) ? $atr['order'] : 'ASC';
 		}
 	} else if (array_key_exists('presetName', $atr) && $atr['presetName'] !== 'none') {
 		$atrFromPreset = array();
@@ -191,26 +197,27 @@ function pgc_sgb_render_albums_blocks_callback($atr, $content)
 	$galleryData = isset($atrFromPreset) ? json_encode($atrFromPreset) : json_encode($atr);
 	$align = '';
 	if (isset($atr['align'])) {
-		$align = ' ' . $align . 'align' . $atr['align'];
+		$align = $align . 'align' . $atr['align'];
 	}
-	$className = PGC_SGB_BLOCK_PREF . $skinType . $align;
+	$className = PGC_SGB_BLOCK_PREF . $skinType . ' ' . $align;
 
 	if (isset($atr['className'])) {
 		$className = $className . ' ' . $atr['className'];
 	}
-	$noscript = '<noscript><div class="simply-gallery-amp pgc-sgb-album ' . esc_attr($align) . '"><div class="sgb-gallery">'
+	$noscript = '<div class="simply-gallery-amp pgc-sgb-album ' . esc_attr($align) . '" style="display: none;"><div class="sgb-gallery">'
 		. pgc_sgb_noscript_covers($galleries)
-		. '</div></div></noscript>';
-	$preloaderColor = '#d4d4d4';
-	$preloder = '<div class="sgb-preloader">
+		. '</div></div>';
+	$preloaderColor = isset($galleryDataArr['galleryPreloaderColor']) ? $galleryDataArr['galleryPreloaderColor'] : '#d4d4d4';
+	$preloder = '<div class="sgb-preloader" id="pr_' . $atr['galleryId'] . '">
 	<div class="sgb-square" style="background:' . $preloaderColor . '"></div>
 	<div class="sgb-square" style="background:' . $preloaderColor . '"></div>
 	<div class="sgb-square" style="background:' . $preloaderColor . '"></div>
 	<div class="sgb-square" style="background:' . $preloaderColor . '"></div></div>';
-	$html = '<div class="pgc-sgb-cb ' . esc_attr($className)	. '" data-gallery-id="' . $atr['galleryId'] . '">
-		<script type="application/json" class="sgb-data">' . wp_kses_post($galleryData) . '</script>'
+	$html = '<div class="pgc-sgb-cb ' . esc_attr($className)	. '" data-gallery-id="' . $atr['galleryId'] . '">'
+		. $preloder . $noscript
+		. '<script type="application/json" class="sgb-data">' . wp_kses_post($galleryData) . '</script>'
 		. '<script type="text/javascript">(function(){if(window.PGC_SGB && window.PGC_SGB.searcher){window.PGC_SGB.searcher.initBlocks()}})()</script>'
-		. $noscript . $preloder . '</div>';
+		. '</div>';
 	return $html;
 }
 function pgc_sgb_render_post_blocks_callback($atr, $content)
@@ -372,6 +379,14 @@ function pgc_sgb_post_enqueue_scripts()
 }
 function pgc_sgb_register_post_type()
 {
+	$default_base = 'pgc_simply_gallery';
+	$curren_galleries_base = get_option('pgc_sgb_galleries_base');
+	$curren_galleries_base = $curren_galleries_base ? $curren_galleries_base : $default_base;
+
+	$default_archive_base = 'simply_galleries';
+	$curren_archive_base = get_option('pgc_sgb_archive_galleries_base');
+	$curren_archive_galleries_base = $curren_archive_base ? $curren_archive_base : $default_archive_base;
+
 	$tax_labels = array(
 		'name'              => __('SimpLy Albums', 'simply-gallery-block'),
 		'singular_name'     => __('Album', 'simply-gallery-block'),
@@ -443,14 +458,16 @@ function pgc_sgb_register_post_type()
 			'show_in_rest'        => true,
 			'show_in_nav_menus'   => false,
 			'show_in_admin_bar'   => true,
-			// 'rewrite'            => array(
-			// 	'slug'       => 'simply-galleries',
-			// 	'with_front' => false,
-			// ),
+			'has_archive'        => $curren_archive_galleries_base,
+			'rewrite'            => array(
+				'slug'       => $curren_galleries_base,
+				'with_front' => false,
+			),
 			'supports'            => array(
 				'title',
 				'thumbnail',
 				'editor',
+				'comments'
 			),
 			'taxonomies' => array(PGC_SGB_TAXONOMY),
 		)
@@ -485,6 +502,105 @@ function pgc_sgb_filter_custom_post_by_taxonomies($post_type)
 		}
 		echo '</select>';
 	}
+}
+/** Init permalink settings */
+function pgc_sgb_galleries_permalink_settings()
+{
+	$default_base = 'pgc_simply_gallery';
+	$curren_galleries_base = get_option('pgc_sgb_galleries_base');
+	$curren_galleries_base = $curren_galleries_base ? $curren_galleries_base : $default_base;
+	$current_base = $curren_galleries_base;
+
+	$default_archive_base = 'simply_galleries';
+	$curren_archive_base = get_option('pgc_sgb_archive_galleries_base');
+	$curren_archive_galleries_base = $curren_archive_base ? $curren_archive_base : $default_archive_base;
+
+	echo wp_kses_post(wpautop(sprintf(
+		__('If you like, you may enter custom structures for your SimpLy gallery URLs here. For example, using <code>pgc_simply_gallery</code> would make your gallery links like <code>%spgc_simply_gallery/simply-gallery/</code>. This setting affects gallery URLs only.', 'simply-gallery-block'),
+		esc_url(home_url('/'))
+	)));
+?>
+	<table class="form-table pgc-sgb-permalink-structure">
+		<tbody>
+			<tr>
+				<td>
+					<code class="default-example"><?php echo esc_html(home_url()); ?>/</code>
+					<input name="pgc_sgb_permalink_structure" id="pgc_sgb_permalink_structure" type="text" value="<?php echo esc_attr($current_base ? $current_base : $default_base); ?>" class="regular-text code">
+					<code class="default-example">/simply-gallery/</code>
+				</td>
+			</tr>
+			<tr>
+				<td><?php echo wp_kses_post(wpautop(sprintf(
+							__('If you like, you may enter custom Archive page slug for your SimpLy galleries. For example, using <code>simply_galleries</code> would make your galleries archive links like <code>%ssimply_galleries/</code>. This setting affects gallery URLs only.', 'simply-gallery-block'),
+							esc_url(home_url('/'))
+						))); ?></td>
+			</tr>
+			<tr>
+				<td>
+					<code class="default-example"><?php echo esc_html(home_url()); ?>/</code>
+					<input name="pgc_sgb_arvhive_permalink_structure" id="pgc_sgb_arvhive_permalink_structure" type="text" value="<?php echo esc_attr($curren_archive_galleries_base ? $curren_archive_galleries_base : $default_archive_base); ?>" class="regular-text code">
+					<code class="default-example">/</code>
+				</td>
+			</tr>
+		</tbody>
+	</table>
+	<?php wp_nonce_field('pgc-sgb-permalink', 'pgc-sgb-permalinks-nonce'); ?>
+<?php
+}
+function pgc_sgb_clean($var)
+{
+	if (is_array($var)) {
+		return array_map('pgc_sgb_clean', $var);
+	} else {
+		return is_scalar($var) ? sanitize_text_field($var) : $var;
+	}
+}
+function pgc_sgb_sanitize_permalink($value)
+{
+	global $wpdb;
+
+	$value = $wpdb->strip_invalid_text_for_column($wpdb->options, 'option_value', $value);
+
+	if (is_wp_error($value)) {
+		$value = '';
+	}
+
+	$value = esc_url_raw(trim($value));
+	$value = str_replace('http://', '', $value);
+	return untrailingslashit($value);
+}
+function pgc_sgb_galleries_permalink_settings_save()
+{
+	if (!is_admin()) {
+		return;
+	}
+	if (
+		isset($_POST['permalink_structure'], $_POST['pgc-sgb-permalinks-nonce'])
+		&& wp_verify_nonce(wp_unslash($_POST['pgc-sgb-permalinks-nonce']), 'pgc-sgb-permalink')
+	) {
+		$gallery_base = 'pgc_simply_gallery';
+		if (isset($_POST['pgc_sgb_permalink_structure'])) {
+			$gallery_base = preg_replace('#/+#', '', '' . str_replace('#', '', trim(wp_unslash($_POST['pgc_sgb_permalink_structure']))));
+		}
+		$gallery_base_for_save = pgc_sgb_sanitize_permalink($gallery_base);
+		update_option('pgc_sgb_galleries_base', $gallery_base_for_save);
+
+		$archive_base = 'simply_galleries';
+		if (isset($_POST['pgc_sgb_arvhive_permalink_structure'])) {
+			$archive_base = preg_replace('#/+#', '', '' . str_replace('#', '', trim(wp_unslash($_POST['pgc_sgb_arvhive_permalink_structure']))));
+		}
+		$archive_base_for_save = pgc_sgb_sanitize_permalink($archive_base);
+		update_option('pgc_sgb_archive_galleries_base', $archive_base_for_save);
+	}
+}
+function pgc_sgb_galleries_permalink_settings_init()
+{
+	add_settings_section(
+		'pgc-sgb-gallery-permalink',
+		esc_html__('SimpLy Gallery permalinks', 'simply-gallery-block'),
+		'pgc_sgb_galleries_permalink_settings',
+		'permalink'
+	);
 }
 /** SimpLy Items List  */
 function pgc_sgb_prepare_item_for_js($img_att_data)
@@ -769,3 +885,5 @@ add_action('rest_api_init', 'pgc_sgb_register_rest_route');
 add_action('init', 'pgc_sgb_register_post_type');
 add_action('restrict_manage_posts', 'pgc_sgb_filter_custom_post_by_taxonomies', 10);
 add_action('admin_enqueue_scripts', 'pgc_sgb_post_enqueue_scripts');
+add_action('admin_init', 'pgc_sgb_galleries_permalink_settings_init');
+add_action('admin_init', 'pgc_sgb_galleries_permalink_settings_save');

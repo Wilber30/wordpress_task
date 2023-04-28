@@ -99,31 +99,37 @@ $sfsi_responsive_icon_dummy = array(
  
 <!-- Section 6 "Do you want to display icons at the end of every post?" main div Start -->
 <div>
-<p class="clear" style="margin-top:16 !important"><?php _e("Here you have two options:",'ultimate-social-media-icons') ?></span></p>
+<p class="clear"><?php _e( 'Here you have two options:', 'ultimate-social-media-icons' ); ?></span></p>
 
   <div class="tab6">
-    <ul class="sfsi_icn_listing8">
+    <ul class="sfsi_icn_listing8 sfsi_overflow_visible">
 
       <li class="sfsibeforeafterpostselector" style="max-width: none">
         <div class="radio_section tb_4_ck"></div>
         <div class="sfsi_right_info">
           <ul class="sfsi_tab_3_icns sfsi_shwthmbfraftr" style="margin:0">
             <li onclick="sfsi_togglbtmsection('sfsi_toggleonlyrspvshrng, .sfsi_responsive_show', 'sfsi_toggleonlystndrshrng, .sfsi_responsive_hide', this);sfsi_responsive_icon_show_responsive_options();" class="clckbltglcls sfsi_border_left_0" style="width:29%!important">
-              <input name="sfsi_display_button_type" <?php echo ($option6['sfsi_display_button_type'] == 'responsive_button') ?  'checked="true"' : ''; ?> type="radio" value="responsive_button" class="styled" />
+              <input name="sfsi_display_button_type" <?php echo ($option6['sfsi_display_button_type'] == 'responsive_button') ? 'checked="true"' : ''; ?> type="radio" value="responsive_button" class="styled" />
               <label class="labelhdng4" style="margin-top:2px">
                 <?php _e("Responsive icons",'ultimate-social-media-icons') ?>
               </label>
             </li>
             <li onclick="sfsi_togglbtmsection('sfsi_toggleonlystndrshrng, .sfsi_responsive_hide', 'sfsi_toggleonlyrspvshrng, .sfsi_responsive_show', this);" class="clckbltglcls sfsi_border_left_0" style="width:29%!important">
-              <input name="sfsi_display_button_type" <?php echo ($option6['sfsi_display_button_type'] == 'standard_buttons') ?  'checked="true"' : ''; ?> type="radio" value="standard_buttons" class="styled" />
+              <input name="sfsi_display_button_type" <?php echo ($option6['sfsi_display_button_type'] == 'standard_buttons') ? 'checked="true"' : ''; ?> type="radio" value="standard_buttons" class="styled" />
               <label class="labelhdng4" style="margin-top:2px">
               <?php _e("Original icons",'ultimate-social-media-icons') ?>
               </label>
             </li>
-            <li class="clckbltglcls sfsi_border_left_0 sfsi_disable_radio" style="width: 42% !important">
-              <input type="radio" class="styled" />
-              <label class="labelhdng4"  style="margin-top:2px" >
-              <?php _e("Display the icons I selected above",'ultimate-social-media-icons') ?>
+            <li class="clckbltglcls sfsi_border_left_0 sfsi_disable_radio sfsi_disable_radio_wrapper" style="width: 42% !important">
+              <label class="sfsi_tooltip_premium d-flex">
+                <span class="radio" style="background-position: 0px 0px;"></span>
+                <?php /* ?><input type="radio" class="styled" /><?php */ ?>
+                <div class="sfsi_disable_radio_content_wrapper">
+                  <label class="labelhdng4"  style="margin-top:2px" ><?php _e( 'Display the icons I selected above', 'ultimate-social-media-icons' ); ?></label>
+                  <div class="sfsi_tooltip_premium_wrapper">
+                    <?php echo sfsi_premium_tooltip_content( 'tp-checkbox-link' ); ?>
+                  </div>
+                </div>
               </label>
             </li>
 
@@ -140,7 +146,7 @@ $sfsi_responsive_icon_dummy = array(
               <ul class="sfsi_responsive_default_icon_container_wrapper">
                 <li class="sfsi_responsive_default_icon_container sfsi_border_left_0 " style="margin: 10px 0px">
                   <label class="heading-label select-icons">
-                    <?php _e( 'Select Icons', 'ultimate-social-media-icons' ); ?>
+                    <?php _e( 'Select Icons', 'ultimate-social-media-icons' ); ?>:
                   </label>
                 </li>
 
@@ -148,7 +154,7 @@ $sfsi_responsive_icon_dummy = array(
 
                   <li class="sfsi_responsive_default_icon_container sfsi_vertical_center sfsi_border_left_0">
                     <div class="radio_section tb_4_ck">
-                      <input name="sfsi_responsive_<?php echo $icon; ?>_display" <?php echo ($icon_config['active'] == 'yes') ?  'checked="true"' : ''; ?> id="sfsi_responsive_<?php echo $icon; ?>_display" type="checkbox" value="yes" class="styled" data-icon="<?php echo $icon; ?>" />
+                      <input name="sfsi_responsive_<?php echo $icon; ?>_display" <?php echo ($icon_config['active'] == 'yes') ? 'checked="true"' : ''; ?> id="sfsi_responsive_<?php echo $icon; ?>_display" type="checkbox" value="yes" class="styled" data-icon="<?php echo $icon; ?>" />
                     </div>
                     <span class="sfsi_icon_container">
                       <div class="sfsi_responsive_icon_item_container sfsi_responsive_icon_<?php echo strtolower($icon); ?>_container" style="word-break:break-all;padding-left:0">
@@ -246,7 +252,7 @@ $sfsi_responsive_icon_dummy = array(
 
                   <ul>
                     <li>
-                      <div class="radio_section tb_4_ck"><input name="sfsi_rectsub" <?php echo ($option6['sfsi_rectsub'] == 'yes') ?  'checked="true"' : ''; ?> id="sfsi_rectsub" type="checkbox" value="yes" class="styled" />
+                      <div class="radio_section tb_4_ck"><input name="sfsi_rectsub" <?php echo ($option6['sfsi_rectsub'] == 'yes') ? 'checked="true"' : ''; ?> id="sfsi_rectsub" type="checkbox" value="yes" class="styled" />
                       </div>
 
                       <a href="#" title="Subscribe Follow" class="cstmdsplsub">
@@ -254,14 +260,14 @@ $sfsi_responsive_icon_dummy = array(
                       </a>
                     </li>
                     <li>
-                      <div class="radio_section tb_4_ck"><input name="sfsi_rectfb" <?php echo ($option6['sfsi_rectfb'] == 'yes') ?  'checked="true"' : ''; ?> id="sfsi_rectfb" type="checkbox" value="yes" class="styled" /></div>
+                      <div class="radio_section tb_4_ck"><input name="sfsi_rectfb" <?php echo ($option6['sfsi_rectfb'] == 'yes') ? 'checked="true"' : ''; ?> id="sfsi_rectfb" type="checkbox" value="yes" class="styled" /></div>
 
                       <a href="#" title="Facebook Like">
                         <img src="<?php echo SFSI_PLUGURL; ?>images/like.jpg" alt="Facebook Like" />
                       </a>
                     </li>
                     <li>
-                      <div class="radio_section tb_4_ck"><input name="sfsi_rectfbshare" <?php echo ($option6['sfsi_rectfbshare'] == 'yes') ?  'checked="true"' : ''; ?> id="sfsi_rectfbshare" type="checkbox" value="yes" class="styled" />
+                      <div class="radio_section tb_4_ck"><input name="sfsi_rectfbshare" <?php echo ($option6['sfsi_rectfbshare'] == 'yes') ? 'checked="true"' : ''; ?> id="sfsi_rectfbshare" type="checkbox" value="yes" class="styled" />
                       </div>
                       <a href="#" title="Facebook Share">
                         <img src="<?php echo SFSI_PLUGURL; ?>images/fbshare.png" alt="Facebook Share" />
@@ -270,7 +276,7 @@ $sfsi_responsive_icon_dummy = array(
 
                     <li>
 
-                      <div class="radio_section tb_4_ck"><input name="sfsi_recttwtr" <?php echo ($option6['sfsi_recttwtr'] == 'yes') ?  'checked="true"' : ''; ?> id="sfsi_recttwtr" type="checkbox" value="yes" class="styled" />
+                      <div class="radio_section tb_4_ck"><input name="sfsi_recttwtr" <?php echo ($option6['sfsi_recttwtr'] == 'yes') ? 'checked="true"' : ''; ?> id="sfsi_recttwtr" type="checkbox" value="yes" class="styled" />
                       </div>
 
                       <a href="#" title="twitter" class="cstmdspltwtr">
@@ -282,7 +288,7 @@ $sfsi_responsive_icon_dummy = array(
 
                     <li>
 
-                      <div class="radio_section tb_4_ck"><input name="sfsi_rectpinit" <?php echo ($option6['sfsi_rectpinit'] == 'yes') ?  'checked="true"' : ''; ?> id="sfsi_rectpinit" type="checkbox" value="yes" class="styled" />
+                      <div class="radio_section tb_4_ck"><input name="sfsi_rectpinit" <?php echo ($option6['sfsi_rectpinit'] == 'yes') ? 'checked="true"' : ''; ?> id="sfsi_rectpinit" type="checkbox" value="yes" class="styled" />
                       </div>
 
                       <a href="#" title="Pin It">
@@ -354,11 +360,11 @@ $sfsi_responsive_icon_dummy = array(
                   <div class="options">
                   <label><?php _e("Alignment of share icons:",'ultimate-social-media-icons') ?> </label>
                     <div class="field"><select name="sfsi_icons_alignment" id="sfsi_icons_alignment" class="styled">
-                        <option value="left" <?php echo ($option6['sfsi_icons_alignment'] == 'left') ?  'selected="selected"' : ''; ?>>
+                        <option value="left" <?php echo ($option6['sfsi_icons_alignment'] == 'left') ? 'selected="selected"' : ''; ?>>
                         <?php _e("Left",'ultimate-social-media-icons') ?></option>
-                        <!--<option value="center" <?php //echo ($option6['sfsi_icons_alignment']=='center') ?  'selected="selected"' : '' ;
+                        <!--<option value="center" <?php //echo ($option6['sfsi_icons_alignment']=='center') ? 'selected="selected"' : '' ;
                                                     ?>>Center</option>-->
-                        <option value="right" <?php echo ($option6['sfsi_icons_alignment'] == 'right') ?  'selected="selected"' : ''; ?>>
+                        <option value="right" <?php echo ($option6['sfsi_icons_alignment'] == 'right') ? 'selected="selected"' : ''; ?>>
                         <?php _e("Right",'ultimate-social-media-icons') ?></option>
                       </select>
                     </div>
@@ -374,7 +380,7 @@ $sfsi_responsive_icon_dummy = array(
             <?php $display2 = ($option6['sfsi_display_button_type'] == 'responsive_button') ? "display:block;border-left:0!important":"display:none;border-left:0!important"; ?>
 
             <li class="sfsi_responsive_icon_option_li sfsi_responsive_show sfsi_responsive_icon_option_additional_li" style="margin-left:20px;border-left:0;<?php echo $display2 ?>">
-                <label class="heading-label"><?php _e( 'Display options', 'ultimate-social-media-icons' ); ?></label>
+                <label class="heading-label select-icons"><?php _e( 'Display options', 'ultimate-social-media-icons' ); ?>:</label>
                 <div class="options">
                     <label class="first" style="margin-top:3px; color: #555555;"><?php _e( 'Pages to show icons:', 'ultimate-social-media-icons' ); ?></label>
                     <div class="field">
@@ -395,7 +401,7 @@ $sfsi_responsive_icon_dummy = array(
                             </li>
                             <li>
                                 <div class="radio_section tb_4_ck">
-                                    <input name="sfsi_responsive_icons_after_post" type="checkbox" value="yes" class="styled" <?php echo ((!isset($option9['sfsi_responsive_icons_after_post'])) || $option9['sfsi_responsive_icons_after_post'] == 'yes') ?  'checked="true"' : ''; ?>>
+                                    <input name="sfsi_responsive_icons_after_post" type="checkbox" value="yes" class="styled" <?php echo ((!isset($option9['sfsi_responsive_icons_after_post'])) || $option9['sfsi_responsive_icons_after_post'] == 'yes') ? 'checked="true"' : ''; ?>>
                                 </div>
 
                                 <div class="sfsi_right_info">
@@ -420,7 +426,7 @@ $sfsi_responsive_icon_dummy = array(
                             </li>
                             <li>
                               <div class="radio_section tb_4_ck">
-                                <input name="sfsi_responsive_icons_after_post_on_taxonomy" type="checkbox" value="yes" class="styled" <?php echo ((isset($option9['sfsi_responsive_icons_after_post_on_taxonomy'])) && $option9['sfsi_responsive_icons_after_post_on_taxonomy'] == 'yes') ?  'checked="true"' : ''; ?>>
+                                <input name="sfsi_responsive_icons_after_post_on_taxonomy" type="checkbox" value="yes" class="styled" <?php echo ((isset($option9['sfsi_responsive_icons_after_post_on_taxonomy'])) && $option9['sfsi_responsive_icons_after_post_on_taxonomy'] == 'yes') ? 'checked="true"' : ''; ?>>
                               </div>
                               <div class="sfsi_right_info">
                                 <?php _e( 'After posts', 'ultimate-social-media-icons' ); ?>
@@ -446,7 +452,7 @@ $sfsi_responsive_icon_dummy = array(
                             <li class="">
 
                                 <div class="radio_section tb_4_ck">
-                                    <input name="sfsi_responsive_icons_after_pages" type="checkbox" value="yes" class="styled" <?php echo ((isset($option9['sfsi_responsive_icons_after_pages'])) && $option9['sfsi_responsive_icons_after_pages'] == 'yes') ?  'checked="true"' : ''; ?>>
+                                    <input name="sfsi_responsive_icons_after_pages" type="checkbox" value="yes" class="styled" <?php echo ((isset($option9['sfsi_responsive_icons_after_pages'])) && $option9['sfsi_responsive_icons_after_pages'] == 'yes') ? 'checked="true"' : ''; ?>>
                                 </div>
 
                                 <div class="sfsi_right_info"><?php _e( 'At bottom of pages', 'ultimate-social-media-icons' ); ?></div>
@@ -469,7 +475,7 @@ $sfsi_responsive_icon_dummy = array(
                               </label>
                             </li>
                             <li>
-                                <div class="radio_section tb_4_ck"><input name="sfsi_display_after_woocomerce_desc" <?php echo (isset($option9['sfsi_display_after_woocomerce_desc']) && $option9['sfsi_display_after_woocomerce_desc'] == 'yes') ?  'checked="true"' : ''; ?> id="sfsi_display_after_woocomerce_desc" type="checkbox" value="yes" class="styled">
+                                <div class="radio_section tb_4_ck"><input name="sfsi_display_after_woocomerce_desc" <?php echo (isset($option9['sfsi_display_after_woocomerce_desc']) && $option9['sfsi_display_after_woocomerce_desc'] == 'yes') ? 'checked="true"' : ''; ?> id="sfsi_display_after_woocomerce_desc" type="checkbox" value="yes" class="styled">
                                 </div>
                                 <div class="sfsi_right_info">
                                     <?php _e( 'After product descriptions', 'ultimate-social-media-icons' ); ?>
@@ -590,7 +596,7 @@ $sfsi_responsive_icon_dummy = array(
                 <div class="field-sfsi_responsive_icons_settings_edge_radius" style="position:absolute;margin-left: 6px;<?php echo (isset($sfsi_responsive_icons["settings"]["edge_type"]) && $sfsi_responsive_icons["settings"]["edge_type"] == 'Sharp') ? 'display:none' : 'display:inline-block'; ?>">
                   <select name="sfsi_responsive_icons_settings_edge_radius" id="sfsi_icons_alignment" class="styled">
                     <?php for ($i = 1; $i <= 20; $i++) : ?>
-                      <option value="<?php echo $i; ?>" <?php echo (isset($sfsi_responsive_icons["settings"]) && isset($sfsi_responsive_icons["settings"]["edge_radius"]) && $sfsi_responsive_icons["settings"]["edge_radius"] == $i) ?  'selected="selected"' : ''; ?>>
+                      <option value="<?php echo $i; ?>" <?php echo (isset($sfsi_responsive_icons["settings"]) && isset($sfsi_responsive_icons["settings"]["edge_radius"]) && $sfsi_responsive_icons["settings"]["edge_radius"] == $i) ? 'selected="selected"' : ''; ?>>
                         <?php echo $i; ?>
                       </option>
                     <?php endfor; ?>

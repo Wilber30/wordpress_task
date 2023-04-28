@@ -1,4 +1,4 @@
-<?php
+<?php // phpcs:ignore SlevomatCodingStandard.TypeHints.DeclareStrictTypes.DeclareStrictTypesMissing
 
 namespace MailPoet\Util;
 
@@ -40,7 +40,7 @@ class Url {
   public function redirectBack($params = []) {
     // check mailpoet_redirect parameter
     $referer = (isset($_POST['mailpoet_redirect'])
-      ? $_POST['mailpoet_redirect']
+      ? sanitize_text_field(wp_unslash($_POST['mailpoet_redirect']))
       : $this->wp->wpGetReferer()
     );
 
@@ -71,5 +71,9 @@ class Url {
       $this->redirectTo($url);
     }
     exit();
+  }
+
+  public function isUsingHttps(string $url): bool {
+    return $this->wp->wpParseUrl($url, PHP_URL_SCHEME) === 'https';
   }
 }

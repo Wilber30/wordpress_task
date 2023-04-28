@@ -50,7 +50,7 @@ function pgc_sgb_amp_item( $item )
     
     
     if ( $item['type'] === 'image' || $item['type'] === 'audio' ) {
-        $itemElemant = '<img alt="' . esc_attr( ( isset( $item['alt'] ) ? $item['alt'] : '' ) ) . '" width="' . esc_attr( $image['width'] ) . '" height="' . esc_attr( $image['height'] ) . '" loading="auto" data-lazy-src="" class="skip-lazy no-lazyload noLazy" ' . 'src="' . esc_url( $image['src'] ) . '"/>';
+        $itemElemant = '<img alt="' . esc_attr( ( isset( $item['alt'] ) ? $item['alt'] : '' ) ) . '" width="' . esc_attr( $image['width'] ) . '" height="' . esc_attr( $image['height'] ) . '" loading="lazy" ' . 'src="' . esc_url( $image['src'] ) . '"/>';
         
         if ( $item['type'] === 'audio' ) {
             $audioEl = '<audio controls src="' . esc_url( $item['url'] ) . '"></audio>';
@@ -69,7 +69,7 @@ function pgc_sgb_amp_item( $item )
         
         if ( $item['type'] === 'video' ) {
             $poster = ( $image ? 'poster="' . $image['src'] . '"' : '' );
-            $itemElemant = '<video controls ' . $poster . ' src="' . esc_url( $item['url'] ) . '"></video>';
+            $itemElemant = '<video controls preload="none" ' . $poster . ' src="' . esc_url( $item['url'] ) . '"></video>';
         }
     
     }
@@ -78,7 +78,7 @@ function pgc_sgb_amp_item( $item )
     if ( isset( $itemElemant ) ) {
         
         if ( isset( $item['caption'] ) && $item['caption'] !== '' ) {
-            $captionWrap = '<div class="sgb-item-caption"><em>' . $item['caption'] . '</em></div>';
+            $captionWrap = '<div class="sgb-item-caption"><em>' . wp_kses_post( $item['caption'] ) . '</em></div>';
             $itemElemant = $itemElemant . $captionWrap;
         }
         
@@ -105,47 +105,54 @@ function pgc_sgb_render_callback( $atr, $content )
     wp_enqueue_style( PGC_SGB_SLUG . '-frontend' );
     wp_enqueue_script( PGC_SGB_SLUG . '-script' );
     /** galleryType-1.1.0  galleryData-1.7.0 */
-    if ( isset( $atr['galleryType'] ) === false || isset( $atr['galleryData'] ) === false ) {
+    if ( isset( $atr['galleryType'] ) === false ) {
         return $content;
     }
-    $galleryData = $atr['galleryData'];
-    $galleryDataArr = json_decode( $galleryData, true );
+    $galleryDataArr = $atr;
+    unset( $galleryDataArr['attachmentsIDsVerified'] );
+    unset( $galleryDataArr['startPosIndex'] );
+    unset( $galleryDataArr['selectedItems'] );
     $galleryQueryData = null;
     
     if ( isset( $atr['images'] ) ) {
-        $atr['images'] = array_map( 'pgc_sgb_prepare_item_for_js', $atr['images'] );
+        $galleryDataArr['images'] = array_map( 'pgc_sgb_prepare_item_for_js', $atr['images'] );
         $galleryDataArr['itemsMetaDataCollection'] = ( isset( $atr['itemsMetaDataCollection'] ) ? $atr['itemsMetaDataCollection'] : array() );
-        $galleryDataArr['images'] = $atr['images'];
         $galleryData = serialize_block_attributes( $galleryDataArr );
     }
     
     $skinType = substr( $atr['galleryType'], 8 );
     $align = '';
     if ( isset( $atr['align'] ) ) {
-        $align = ' ' . $align . 'align' . $atr['align'];
+        $align = $align . 'align' . $atr['align'];
     }
-    $className = PGC_SGB_BLOCK_PREF . $skinType . $align;
+    $className = PGC_SGB_BLOCK_PREF . $skinType . ' ' . $align;
     if ( isset( $atr['className'] ) ) {
         $className = $className . ' ' . $atr['className'];
     }
     
-    if ( $skinType === 'slider' || $skinType === 'splitcarousel' || $skinType === 'horizon' || $skinType === 'accordion' ) {
+    if ( $skinType === 'slider' || $skinType === 'splitcarousel' || $skinType === 'horizon' || $skinType === 'accordion' || $skinType === 'showcase' ) {
         $minHeight = ( isset( $atr['sliderMaxHeight'] ) ? esc_attr( $atr['sliderMaxHeight'] ) : 400 );
-        $style = ' style="min-height:' . $minHeight . 'px";';
+        $style = ' style="min-height:' . $minHeight . 'px"';
     }
     
-    $noscript = '<noscript><div class="simply-gallery-amp pgc_sgb_slider ' . esc_attr( $align ) . '"><div class="sgb-gallery">' . pgc_sgb_noscript( $atr['images'] ) . '</div></div></noscript><noscript><style type="text/css">.sgb-preloader {display:none;}</style></noscript>';
-    $preloaderColor = ( $galleryDataArr['galleryPreloaderColor'] ? $galleryDataArr['galleryPreloaderColor'] : '#d4d4d4' );
-    $preloder = '<div class="sgb-preloader">
+    $noscript = '<div class="simply-gallery-amp pgc_sgb_slider ' . esc_attr( $align ) . '" style="display: none;"><div class="sgb-gallery">' . pgc_sgb_noscript( $atr['images'] ) . '</div></div>';
+    $preloaderColor = ( isset( $galleryDataArr['galleryPreloaderColor'] ) ? $galleryDataArr['galleryPreloaderColor'] : '#d4d4d4' );
+    $preloder = '<div class="sgb-preloader" id="pr_' . $atr['galleryId'] . '">
 	<div class="sgb-square" style="background:' . esc_attr( $preloaderColor ) . '"></div>
 	<div class="sgb-square" style="background:' . esc_attr( $preloaderColor ) . '"></div>
 	<div class="sgb-square" style="background:' . esc_attr( $preloaderColor ) . '"></div>
 	<div class="sgb-square" style="background:' . esc_attr( $preloaderColor ) . '"></div></div>';
-    $html = '<div class="pgc-sgb-cb ' . $className . '" data-gallery-id="' . $atr['galleryId'] . '"' . (( isset( $style ) ? $style : '' )) . '>
-		<script type="application/json" class="sgb-data">' . $galleryData . '</script>' . '<script type="text/javascript">(function(){if(window.PGC_SGB && window.PGC_SGB.searcher){window.PGC_SGB.searcher.initBlocks()}})()</script>' . $noscript . $preloder . '</div>';
+    $html = '<div class="pgc-sgb-cb ' . $className . '" data-gallery-id="' . $atr['galleryId'] . '"' . (( isset( $style ) ? $style : '' )) . '>' . $preloder . $noscript . '<script type="application/json" class="sgb-data">' . $galleryData . '</script>' . '<script>(function(){if(window.PGC_SGB && window.PGC_SGB.searcher){window.PGC_SGB.searcher.initBlocks()}})()</script>' . '</div>';
     return $html;
 }
 
+function pgc_sgb_noscript_style()
+{
+    echo  '<noscript><style>.simply-gallery-amp{ display: block !important; }</style></noscript>' ;
+    echo  '<noscript><style>.sgb-preloader{ display: none !important; }</style></noscript>' ;
+}
+
+add_action( 'wp_head', 'pgc_sgb_noscript_style' );
 function pgc_sgb_action_customize_preview_init()
 {
     wp_enqueue_style( PGC_SGB_SLUG . '-frontend' );
@@ -309,6 +316,19 @@ function pgc_sgb_block_assets()
         'style'           => PGC_SGB_SLUG . '-frontend',
         'editor_script'   => PGC_SGB_SLUG . '-js',
         'editor_style'    => PGC_SGB_SLUG . '-slider',
+        'render_callback' => 'pgc_sgb_render_callback',
+    ) );
+    /** Viewer */
+    wp_register_style(
+        PGC_SGB_SLUG . '-viewer',
+        PGC_SGB_URL . 'blocks/skins/pgc_sgb_viewer.style.css',
+        array( PGC_SGB_SLUG . '-editor' ),
+        PGC_SGB_VERSION
+    );
+    register_block_type( 'pgcsimplygalleryblock/viewer', array(
+        'style'           => PGC_SGB_SLUG . '-frontend',
+        'editor_script'   => PGC_SGB_SLUG . '-js',
+        'editor_style'    => PGC_SGB_SLUG . '-viewer',
         'render_callback' => 'pgc_sgb_render_callback',
     ) );
 }

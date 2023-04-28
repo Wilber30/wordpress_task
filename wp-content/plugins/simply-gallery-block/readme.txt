@@ -4,9 +4,9 @@ Plugin URI: https://simplygallery.co
 Contributors: gallerycreator
 Tags: block, image gallery, video gallery, lightbox, gallery, wordpress gallery plugin
 Requires at least: 5.8.0
-Tested up to: 5.9
-Requires PHP: 5.3.0
-Stable tag: 2.3.5
+Tested up to: 6.2
+Requires PHP: 5.3.8
+Stable tag: 3.1.2
 License: GPL-2.0
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -25,9 +25,11 @@ SimpLy Lightbox Plugin easily displays all linked images from a post or page in 
 
 ### Links ###
 
-* [Masonry, Justified, Grid Gallery Blocks - Live DEMO](https://simplygallery.co/)
+* [Masonry, Justified, Grid, Slider, Viewer Gallery Blocks - Live DEMO](https://simplygallery.co/)
 * [Album Navigator Block - Live DEMO](https://simplygallery.co/album-navigator/)
 * [Albums Block - Live DEMO](https://simplygallery.co/album-beginning/)
+* [Viewer Gallery Block - Live DEMO](https://simplygallery.co/simply-viewer/)
+* [Premium Showcase Gallery Block - Live DEMO](https://simplygallery.co/showcase-gallery-block/)
 * [Premium Diamond Gallery Block - Live DEMO](https://simplygallery.co/diamond/)
 * [Premium Horizon Gallery Block - Live DEMO](https://simplygallery.co/horizon-premium-gallery-block/)
 * [Premium Split Carousel Block - Live DEMO](https://simplygallery.co/split-carousel/)
@@ -48,6 +50,7 @@ SimpLy Lightbox Plugin easily displays all linked images from a post or page in 
 * Media Library Assistant.  Att. Cattegory and Att. Tag - Dynamic Gallery *PRO
 * [FileBird Media Folders - Dynamic Gallery *PRO](https://simplygallery.co/filebird-folders-in-media-library/)
 * [Tags Filter](https://simplygallery.co/tags-filter/)
+* Poster generator for a self-hosted video (.mp4). Just select a frame and set it as a featured image for your video.
 * Hidden Gallery
 * Supports Photo, Video *MP4, YouTube, Vimeo and Audio *MP3 Lightbox is enabled by default*
 * HTML5 Browser History support - Deep linking. Disabled by default*
@@ -123,6 +126,89 @@ Please note that you easily convert block gallery from Masonry to Justified or t
 Yes! SimpLy Gallery Blocks's core features are absolutely free.
 
 == Changelog ==
+
+= 3.1.2 =
+* Update: Freemius SDK
+* Fixed: minor bug fixes (video)
+
+= 3.1.1 =
+* Update: Freemius SDK
+
+= 3.1.0 =
+* Added: the ability to create a poster for a self-hosted video (.mp4). Just select a frame and set it as a featured image for your video.
+* Fixed: SimpLy Viewer - item description
+* Fixed: playlist icon in YouTube player
+
+= 3.0.9 =
+ * Update: Freemius SDK
+ * Update: for posters on video and audio files, only the Featured Image will be used.
+ * Added: Clean Style for Viewer
+ * Fixed: issue with download button (Viewer Block)
+ * Fixed: minor bug fixes (Vimeo Cattegories)
+
+ = 3.0.8 =
+ * Added: New block with Slider - Viewer
+ * Fixed: security vulnerability fixed - improved permission check for different user types for Ajax requests. With the assistance of Erwan Le Russo (Security Research Engineer, WPScan / Jetpack / Automattic)
+ * Fixed: issue with lightboxes in Classic Editor
+ * Fixed: minor bug fixes (Vimeo)
+
+ = 3.0.7 =
+ * Update: Freemius SDK (2.5.3)
+
+= 3.0.6 =
+* Added: multiselect option for Att. Cattegory and Att. Tag (Media Library Assistant). (* PRO version).
+* Fixed: Minor bug fixes
+
+= 3.0.5 =
+* Added: random sorting mode for dynamic galleries (Att. Cattegory, Att. Tag, FileBird Media Folders and SimpLy Tags)
+* Fixed: sorting system for Vimeo collections (as far as Vimeo API allows). The sequence of video clips must match the source on the Vimeo service.
+* Fixed: Minor bug fixes
+
+= 3.0.4 =
+* Updated: poster display method for audio files (MP3)
+* Fixed: Minor bug fixes
+
+= 3.0.3 =
+* Update: Freemius SDK
+* Fixed: Showcase Gallery Block - Next / Previous Buttons
+* Upgrade: Zoom mode changed in Lightbox
+* Fixed: Minor bug fixes 
+
+= 3.0.2 =
+* Added the ability to activate comments on gallery posts
+* Fixed: Lightbox description
+* Tried to fix the problem in Jetpack - Enable Lazy Loading for images
+* Fixed: Minor bug fixes 
+
+= 3.0.1 =
+* Fixed: issue with Share and Download buttons 
+* Fixed: Minor bug fixes 
+
+= 3.0.0 =
+* Updated: block data optimization
+* Added: dynamic mode for galleries - automatically update descriptions and tags for gallery items. Disabled by default. (* PLUS version).
+* Fixed: Minor bug fixes 
+
+= 2.4.0 =
+* Added: ability to create dynamic gallery for selected SimpLy tags (* PRO version).
+* Fixed: HTML validity errors  
+
+= 2.3.9 =
+* Added: new Showcase Gallery Block (* PLUS version)
+* Added: mode to play the entire YouTube playlist (* PLUS version).
+* Fixed: Minor bug fixes  
+
+= 2.3.8 =
+* Added: Responsiveness improvement. Grid, Masonry, Justified, Slider, Portfolio, Portfolio2 Blocks
+* Fixed: Minor bug fixes  
+
+= 2.3.7 =
+* Added: SimpLy Gallery permalinks. Settings -> Permalink Settings
+* Fixed: Minor bug fixes  
+
+= 2.3.6 =
+* Fixed: Freemius - Security fix
+
 = 2.3.5 =
 * Added: Block and Preset Selector for Album shortcode.
 * Added: Preset editor for Albums and AlbumNavigator blocks (* PLUS version).

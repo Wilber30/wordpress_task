@@ -2,23 +2,23 @@
 if (!defined('ABSPATH')) exit;
  return array(
  'root' => array(
- 'pretty_version' => 'dev-master',
- 'version' => 'dev-master',
+ 'pretty_version' => 'dev-trunk',
+ 'version' => 'dev-trunk',
  'type' => 'library',
  'install_path' => __DIR__ . '/../../',
  'aliases' => array(),
- 'reference' => 'd66b646d51638519f1a782673079a72c3d8e4a82',
+ 'reference' => '46f030469e900a599a244a4ddee18ffd6840ffc0',
  'name' => '__root__',
  'dev' => false,
  ),
  'versions' => array(
  '__root__' => array(
- 'pretty_version' => 'dev-master',
- 'version' => 'dev-master',
+ 'pretty_version' => 'dev-trunk',
+ 'version' => 'dev-trunk',
  'type' => 'library',
  'install_path' => __DIR__ . '/../../',
  'aliases' => array(),
- 'reference' => 'd66b646d51638519f1a782673079a72c3d8e4a82',
+ 'reference' => '46f030469e900a599a244a4ddee18ffd6840ffc0',
  'dev_requirement' => false,
  ),
  'mtdowling/cron-expression' => array(
@@ -30,24 +30,13 @@ if (!defined('ABSPATH')) exit;
  'reference' => '9be552eebcc1ceec9776378f7dcc085246cacca6',
  'dev_requirement' => false,
  ),
- 'soundasleep/html2text' => array(
- 'pretty_version' => 'dev-master',
- 'version' => 'dev-master',
- 'type' => 'library',
- 'install_path' => __DIR__ . '/../soundasleep/html2text',
- 'aliases' => array(
- 0 => '9999999-dev',
- ),
- 'reference' => 'd907c8fc20605135b4ac29b7a2f43d8c1c6cddb8',
- 'dev_requirement' => false,
- ),
  'woocommerce/action-scheduler' => array(
- 'pretty_version' => '3.4.0',
- 'version' => '3.4.0.0',
+ 'pretty_version' => '3.5.4',
+ 'version' => '3.5.4.0',
  'type' => 'wordpress-plugin',
  'install_path' => __DIR__ . '/../woocommerce/action-scheduler',
  'aliases' => array(),
- 'reference' => '3218a33ff14b968f8cb05de9656c2efa1eeb1330',
+ 'reference' => '9533e71b0eba4a519721dde84a34dfb161f11eb8',
  'dev_requirement' => false,
  ),
  ),

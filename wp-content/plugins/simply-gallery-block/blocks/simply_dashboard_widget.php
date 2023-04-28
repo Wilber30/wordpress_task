@@ -49,7 +49,9 @@ function pgc_sgb_dashboard_widget_render()
 
 function pgc_sgb_add_dashboard_widget()
 {
-    wp_add_dashboard_widget( 'pgc_sgb_dashboard_widget', 'SimpLy ' . esc_html__( 'Gallery', 'simply-gallery-block' ), 'pgc_sgb_dashboard_widget_render' );
+    if ( current_user_can( 'edit_others_posts' ) ) {
+        wp_add_dashboard_widget( 'pgc_sgb_dashboard_widget', 'SimpLy ' . esc_html__( 'Gallery', 'simply-gallery-block' ), 'pgc_sgb_dashboard_widget_render' );
+    }
 }
 
 add_action( 'wp_dashboard_setup', 'pgc_sgb_add_dashboard_widget' );

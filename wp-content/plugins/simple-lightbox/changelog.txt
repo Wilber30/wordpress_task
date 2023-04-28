@@ -1,3 +1,31 @@
+= 2.9.3 =
+
+* Hotfix: WordPress 6.1 `wp_rand()` bug (32-bit platforms) ([#974](https://github.com/archetyped/simple-lightbox/issues/974))
+* Update: Confirm WordPress 6.1 compatibility
+* Optimize: Media item cache key generation
+* Optimize: Prune build tasks
+
+= 2.9.2 =
+
+* Optimize: Symbolic link handing for file/directory paths.
+
+= 2.9.1 =
+
+* Fix: Validate hook priority values (Let's Getz Prioritized)
+
+= 2.9.0 =
+
+* Add: Support WebP image format
+* Add: Support AVIF image format
+* Add: Documentation link to readme file
+* Optimize: Code cleanup/refactoring
+* Optimize: WPCS validation (Phase 1)
+* Optimize: Activate links after all other filters
+* Optimize: Plugin metadata retrieval
+* Update: Confirm WordPress 6.0 compatibility
+* Update: Build dependencies
+* Update: GitHub issue templates
+
 = 2.8.1 =
 
 * Update: PHP 5.6 Compatibility

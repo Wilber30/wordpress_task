@@ -1,4 +1,4 @@
-<?php
+<?php // phpcs:ignore SlevomatCodingStandard.TypeHints.DeclareStrictTypes.DeclareStrictTypesMissing
 
 namespace MailPoet\API\JSON\v1;
 
@@ -20,13 +20,13 @@ use MailPoet\Listing;
 use MailPoet\Newsletter\Listing\NewsletterListingRepository;
 use MailPoet\Newsletter\NewsletterSaveController;
 use MailPoet\Newsletter\NewslettersRepository;
+use MailPoet\Newsletter\NewsletterValidator;
 use MailPoet\Newsletter\Preview\SendPreviewController;
 use MailPoet\Newsletter\Preview\SendPreviewException;
 use MailPoet\Newsletter\Scheduler\PostNotificationScheduler;
 use MailPoet\Newsletter\Scheduler\Scheduler;
 use MailPoet\Newsletter\Url as NewsletterUrl;
 use MailPoet\Settings\SettingsController;
-use MailPoet\Settings\TrackingConfig;
 use MailPoet\UnexpectedValueException;
 use MailPoet\Util\License\Features\Subscribers as SubscribersFeature;
 use MailPoet\Util\Security;
@@ -79,8 +79,11 @@ class Newsletters extends APIEndpoint {
   /** @var NewsletterUrl */
   private $newsletterUrl;
 
-  /** @var TrackingConfig */
-  private $trackingConfig;
+  /** @var NewsletterValidator */
+  private $newsletterValidator;
+
+  /** @var Scheduler */
+  private $scheduler;
 
   public function __construct(
     Listing\Handler $listingHandler,
@@ -91,12 +94,13 @@ class Newsletters extends APIEndpoint {
     NewsletterListingRepository $newsletterListingRepository,
     NewslettersResponseBuilder $newslettersResponseBuilder,
     PostNotificationScheduler $postNotificationScheduler,
-    Emoji $emoji,
     SubscribersFeature $subscribersFeature,
+    Emoji $emoji,
     SendPreviewController $sendPreviewController,
     NewsletterSaveController $newsletterSaveController,
     NewsletterUrl $newsletterUrl,
-    TrackingConfig $trackingConfig
+    Scheduler $scheduler,
+    NewsletterValidator $newsletterValidator
   ) {
     $this->listingHandler = $listingHandler;
     $this->wp = $wp;
@@ -106,12 +110,13 @@ class Newsletters extends APIEndpoint {
     $this->newsletterListingRepository = $newsletterListingRepository;
     $this->newslettersResponseBuilder = $newslettersResponseBuilder;
     $this->postNotificationScheduler = $postNotificationScheduler;
-    $this->emoji = $emoji;
     $this->subscribersFeature = $subscribersFeature;
+    $this->emoji = $emoji;
     $this->sendPreviewController = $sendPreviewController;
     $this->newsletterSaveController = $newsletterSaveController;
     $this->newsletterUrl = $newsletterUrl;
-    $this->trackingConfig = $trackingConfig;
+    $this->scheduler = $scheduler;
+    $this->newsletterValidator = $newsletterValidator;
   }
 
   public function get($data = []) {
@@ -154,7 +159,9 @@ class Newsletters extends APIEndpoint {
   public function save($data = []) {
     $data = $this->wp->applyFilters('mailpoet_api_newsletters_save_before', $data);
     $newsletter = $this->newsletterSaveController->save($data);
-    $response = $this->newslettersResponseBuilder->build($newsletter);
+    $response = $this->newslettersResponseBuilder->build($newsletter, [
+      NewslettersResponseBuilder::RELATION_SEGMENTS,
+    ]);
     $previewUrl = $this->getViewInBrowserUrl($newsletter);
     $response = $this->wp->applyFilters('mailpoet_api_newsletters_save_after', $response);
     return $this->successResponse($response, ['preview_url' => $previewUrl]);
@@ -182,26 +189,11 @@ class Newsletters extends APIEndpoint {
       ]);
     }
 
-    // if the re-engagement email doesn't contain the re-engage link, it can't be activated
-    if ($newsletter->getType() === NewsletterEntity::TYPE_RE_ENGAGEMENT && $status === NewsletterEntity::STATUS_ACTIVE) {
-      if (strpos($newsletter->getContent(), '[link:subscription_re_engage_url]') === false) {
-        return $this->errorResponse([
-          APIError::FORBIDDEN => __(
-            'A re-engagement email must include a link with [link:subscription_re_engage_url] shortcode.',
-            'mailpoet'
-          ),
-        ], [], Response::STATUS_FORBIDDEN);
+    if ($status === NewsletterEntity::STATUS_ACTIVE) {
+      $validationError = $this->newsletterValidator->validate($newsletter);
+      if ($validationError !== null) {
+        return $this->errorResponse([APIError::FORBIDDEN => $validationError], [], Response::STATUS_FORBIDDEN);
       }
-    }
-
-    $tracking_enabled = $this->trackingConfig->isEmailTrackingEnabled();
-    if (!$tracking_enabled && $newsletter->getType() === NewsletterEntity::TYPE_RE_ENGAGEMENT && $status === NewsletterEntity::STATUS_ACTIVE) {
-      return $this->errorResponse([
-        APIError::FORBIDDEN => __(
-          'Re-engagement emails are disabled because open and click tracking is disabled in MailPoet → Settings → Advanced.',
-          'mailpoet'
-        ),
-      ], [], Response::STATUS_FORBIDDEN);
     }
 
     $this->newslettersRepository->prefetchOptions([$newsletter]);
@@ -215,7 +207,7 @@ class Newsletters extends APIEndpoint {
           APIError::BAD_REQUEST => __('This email has incorrect state.', 'mailpoet'),
         ]);
       }
-      $nextRunDate = Scheduler::getNextRunDate($scheduleOption->getValue());
+      $nextRunDate = $this->scheduler->getNextRunDate($scheduleOption->getValue());
       $queues = $newsletter->getQueues();
       foreach ($queues as $queue) {
         $task = $queue->getTask();
@@ -412,13 +404,7 @@ class Newsletters extends APIEndpoint {
 
   private function getViewInBrowserUrl(NewsletterEntity $newsletter): string {
     $this->fixMissingHash([$newsletter]); // Fix for MAILPOET-3275. Remove after May 2021
-    $url = $this->newsletterUrl->getViewInBrowserUrl(
-      (object)[
-        'id' => $newsletter->getId(),
-        'hash' => $newsletter->getHash(),
-      ]
-    );
-
+    $url = $this->newsletterUrl->getViewInBrowserUrl($newsletter);
     // strip protocol to avoid mix content error
     return preg_replace('/^https?:/i', '', $url);
   }

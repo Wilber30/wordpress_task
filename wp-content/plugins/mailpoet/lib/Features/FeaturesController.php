@@ -1,4 +1,4 @@
-<?php
+<?php // phpcs:ignore SlevomatCodingStandard.TypeHints.DeclareStrictTypes.DeclareStrictTypesMissing
 
 namespace MailPoet\Features;
 
@@ -8,15 +8,19 @@ if (!defined('ABSPATH')) exit;
 use MailPoetVendor\Doctrine\DBAL\Exception\TableNotFoundException;
 
 class FeaturesController {
-  public const AUTOMATION = 'automation';
+  const LANDINGPAGE_AB_TEST_DEBUGGER = 'landingpage_ab_test_debugger';
+  const FEATURE_BRAND_TEMPLATES = 'brand_templates';
+  const AUTOMATION_FILTERS = 'automation_filters';
 
   // Define feature defaults in the array below in the following form:
   //   self::FEATURE_NAME_OF_FEATURE => true,
   private $defaults = [
-    self::AUTOMATION => false,
+    self::LANDINGPAGE_AB_TEST_DEBUGGER => false,
+    self::FEATURE_BRAND_TEMPLATES => false,
+    self::AUTOMATION_FILTERS => false,
   ];
 
-  /** @var array */
+  /** @var array|null */
   private $flags;
 
   /** @var FeatureFlagsRepository */
@@ -39,7 +43,7 @@ class FeaturesController {
     } catch (TableNotFoundException $e) {
       return $this->defaults[$feature];
     }
-    return $this->flags[$feature];
+    return ($this->flags ?? [])[$feature];
   }
 
   /** @return bool */
@@ -55,7 +59,11 @@ class FeaturesController {
   /** @return array */
   public function getAllFlags() {
     $this->ensureFlagsLoaded();
-    return $this->flags;
+    return $this->flags ?? [];
+  }
+
+  public function resetCache(): void {
+    $this->flags = null;
   }
 
   private function ensureFlagsLoaded() {

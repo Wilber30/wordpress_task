@@ -1,4 +1,4 @@
-<?php declare(strict_types=1);
+<?php declare(strict_types = 1);
 
 namespace MailPoet\Newsletter\Scheduler;
 
@@ -173,6 +173,6 @@ class ReEngagementScheduler {
     $statement->bindParam('segmentId', $segmentId, ParameterType::INTEGER);
 
     $statement->executeQuery();
-    return $statement->rowCount();
+    return (int)$statement->rowCount();
   }
 }

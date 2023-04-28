@@ -1,4 +1,4 @@
-<?php
+<?php // phpcs:ignore SlevomatCodingStandard.TypeHints.DeclareStrictTypes.DeclareStrictTypesMissing
 
 namespace MailPoet\Logging;
 
@@ -16,10 +16,10 @@ use MailPoetVendor\Monolog\Processor\WebProcessor;
 /**
  * Usage:
  * $logger = Logger::getLogger('logger name');
- * $logger->addDebug('This is a debug message');
- * $logger->addInfo('This is an info');
- * $logger->addWarning('This is a warning');
- * $logger->addError('This is an error message');
+ * $logger->debug('This is a debug message');
+ * $logger->info('This is an info');
+ * $logger->warning('This is a warning');
+ * $logger->error('This is an error message');
  *
  * By default only errors are saved but can be changed in settings to save everything or nothing
  *
@@ -34,6 +34,11 @@ class LoggerFactory {
   const TOPIC_MSS = 'mss';
   const TOPIC_BRIDGE = 'bridge-api';
   const TOPIC_SENDING = 'sending';
+  const TOPIC_CRON = 'cron';
+  const TOPIC_API = 'api';
+  const TOPIC_TRACKING = 'tracking';
+  const TOPIC_COUPONS = 'coupons';
+  const TOPIC_PROVISIONING = 'provisioning';
 
   /** @var LoggerFactory */
   private static $instance;
@@ -67,15 +72,15 @@ class LoggerFactory {
 
   /**
    * @param string $name
-   * @param bool $attachProcessors
+   * @param bool $attachOptionalProcessors
    *
    * @return \MailPoetVendor\Monolog\Logger
    */
-  public function getLogger($name = 'MailPoet', $attachProcessors = WP_DEBUG) {
+  public function getLogger($name = 'MailPoet', $attachOptionalProcessors = WP_DEBUG) {
     if (!isset($this->loggerInstances[$name])) {
       $this->loggerInstances[$name] = new \MailPoetVendor\Monolog\Logger($name);
 
-      if ($attachProcessors) {
+      if ($attachOptionalProcessors) {
         // Adds the line/file/class/method from which the log call originated
         $this->loggerInstances[$name]->pushProcessor(new IntrospectionProcessor());
         // Adds the current request URI, request method and client IP to a log record
@@ -83,6 +88,9 @@ class LoggerFactory {
         // Adds the current memory usage to a log record
         $this->loggerInstances[$name]->pushProcessor(new MemoryUsageProcessor());
       }
+
+      // Adds the plugin's versions to the log, we always want to see this
+      $this->loggerInstances[$name]->pushProcessor(new PluginVersionProcessor());
 
       $this->loggerInstances[$name]->pushHandler(new LogHandler(
         $this->logRepository,

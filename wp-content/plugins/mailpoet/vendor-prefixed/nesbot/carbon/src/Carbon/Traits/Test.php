@@ -14,15 +14,16 @@ trait Test
  ///////////////////////// TESTING AIDS ////////////////////////////
  ///////////////////////////////////////////////////////////////////
  protected static $testNow;
+ protected static $testDefaultTimezone;
  public static function setTestNow($testNow = null)
  {
- if ($testNow === \false) {
- $testNow = null;
- }
- static::$testNow = \is_string($testNow) ? static::parse($testNow) : $testNow;
+ static::$testNow = $testNow instanceof self || $testNow instanceof Closure ? $testNow : static::make($testNow);
  }
  public static function setTestNowAndTimezone($testNow = null, $tz = null)
  {
+ if ($testNow) {
+ self::$testDefaultTimezone = self::$testDefaultTimezone ?? \date_default_timezone_get();
+ }
  $useDateInstanceTimezone = $testNow instanceof DateTimeInterface;
  if ($useDateInstanceTimezone) {
  self::setDefaultTimezone($testNow->getTimezone()->getName(), $testNow);
@@ -30,14 +31,21 @@ trait Test
  static::setTestNow($testNow);
  if (!$useDateInstanceTimezone) {
  $now = static::getMockedTestNow(\func_num_args() === 1 ? null : $tz);
- self::setDefaultTimezone($now->tzName, $now);
+ $tzName = $now ? $now->tzName : null;
+ self::setDefaultTimezone($tzName ?? self::$testDefaultTimezone ?? 'UTC', $now);
+ }
+ if (!$testNow) {
+ self::$testDefaultTimezone = null;
  }
  }
  public static function withTestNow($testNow = null, $callback = null)
  {
  static::setTestNow($testNow);
+ try {
  $result = $callback();
+ } finally {
  static::setTestNow();
+ }
  return $result;
  }
  public static function getTestNow()

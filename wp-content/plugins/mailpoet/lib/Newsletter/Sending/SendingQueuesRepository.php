@@ -51,6 +51,30 @@ class SendingQueuesRepository extends Repository {
       ->getOneOrNullResult();
   }
 
+  public function countAllByNewsletterAndTaskStatus(NewsletterEntity $newsletter, string $status): int {
+    return intval($this->entityManager->createQueryBuilder()
+      ->select('count(s.task)')
+      ->from(SendingQueueEntity::class, 's')
+      ->join('s.task', 't')
+      ->where('t.status = :status')
+      ->andWhere('s.newsletter = :newsletter')
+      ->setParameter('status', $status)
+      ->setParameter('newsletter', $newsletter)
+      ->getQuery()
+      ->getSingleScalarResult());
+  }
+
+  public function getTaskIdsByNewsletterId(int $newsletterId): array {
+    $results = $this->entityManager->createQueryBuilder()
+      ->select('IDENTITY(s.task) as task_id')
+      ->from(SendingQueueEntity::class, 's')
+      ->andWhere('s.newsletter = :newsletter')
+      ->setParameter('newsletter', $newsletterId)
+      ->getQuery()
+      ->getArrayResult();
+    return array_map('intval', array_column($results, 'task_id'));
+  }
+
   public function isSubscriberProcessed(SendingQueueEntity $queue, SubscriberEntity $subscriber): bool {
     $task = $queue->getTask();
     if (is_null($task)) return false;
@@ -115,9 +139,32 @@ class SendingQueuesRepository extends Repository {
     } else {
       $newsletter = $queue->getNewsletter();
       if (!$newsletter instanceof NewsletterEntity) return;
+      if ($newsletter->getStatus() === NewsletterEntity::STATUS_CORRUPT) { // force a re-render
+        $queue->setNewsletterRenderedBody(null);
+        $this->persist($queue);
+      }
       $newsletter->setStatus(NewsletterEntity::STATUS_SENDING);
       $task->setStatus(null);
       $this->flush();
     }
+  }
+
+  public function deleteByTask(ScheduledTaskEntity $scheduledTask): void {
+    $this->entityManager->createQueryBuilder()
+      ->delete(SendingQueueEntity::class, 'sq')
+      ->where('sq.task = :task')
+      ->setParameter('task', $scheduledTask)
+      ->getQuery()
+      ->execute();
+  }
+
+  public function saveCampaignId(SendingQueueEntity $queue, string $campaignId): void {
+    $meta = $queue->getMeta();
+    if (!is_array($meta)) {
+      $meta = [];
+    }
+    $meta['campaignId'] = $campaignId;
+    $queue->setMeta($meta);
+    $this->flush();
   }
 }

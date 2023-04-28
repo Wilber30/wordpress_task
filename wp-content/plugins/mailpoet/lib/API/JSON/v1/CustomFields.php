@@ -1,4 +1,4 @@
-<?php
+<?php // phpcs:ignore SlevomatCodingStandard.TypeHints.DeclareStrictTypes.DeclareStrictTypesMissing
 
 namespace MailPoet\API\JSON\v1;
 
@@ -12,7 +12,7 @@ use MailPoet\API\JSON\ResponseBuilders\CustomFieldsResponseBuilder;
 use MailPoet\Config\AccessControl;
 use MailPoet\CustomFields\CustomFieldsRepository;
 use MailPoet\Entities\CustomFieldEntity;
-use MailPoet\WP\Functions as WPFunctions;
+use MailPoet\Form\ApiDataSanitizer;
 
 class CustomFields extends APIEndpoint {
   public $permissions = [
@@ -25,12 +25,17 @@ class CustomFields extends APIEndpoint {
   /** @var CustomFieldsResponseBuilder */
   private $customFieldsResponseBuilder;
 
+  /** @var ApiDataSanitizer */
+  private $dataSanitizer;
+
   public function __construct(
     CustomFieldsRepository $customFieldsRepository,
-    CustomFieldsResponseBuilder $customFieldsResponseBuilder
+    CustomFieldsResponseBuilder $customFieldsResponseBuilder,
+    ApiDataSanitizer $dataSanitizer
   ) {
     $this->customFieldsRepository = $customFieldsRepository;
     $this->customFieldsResponseBuilder = $customFieldsResponseBuilder;
+    $this->dataSanitizer = $dataSanitizer;
   }
 
   public function getAll() {
@@ -48,13 +53,14 @@ class CustomFields extends APIEndpoint {
       return $this->successResponse($this->customFieldsResponseBuilder->build($customField));
     } else {
       return $this->errorResponse([
-        APIError::NOT_FOUND => WPFunctions::get()->__('This custom field does not exist.', 'mailpoet'),
+        APIError::NOT_FOUND => __('This custom field does not exist.', 'mailpoet'),
       ]);
     }
   }
 
   public function save($data = []) {
     try {
+      $data = $this->dataSanitizer->sanitizeBlock($data);
       $customField = $this->customFieldsRepository->createOrUpdate($data);
       $customField = $this->customFieldsRepository->findOneById($customField->getId());
       if(!$customField instanceof CustomFieldEntity) return $this->errorResponse();
@@ -71,7 +77,7 @@ class CustomFields extends APIEndpoint {
       return $this->successResponse($this->customFieldsResponseBuilder->build($customField));
     }
     return $this->errorResponse([
-      APIError::NOT_FOUND => WPFunctions::get()->__('This custom field does not exist.', 'mailpoet'),
+      APIError::NOT_FOUND => __('This custom field does not exist.', 'mailpoet'),
     ]);
   }
 }
